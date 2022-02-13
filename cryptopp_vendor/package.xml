@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>cryptopp_vendor</name>
+  <version>0.0.1</version>
+  <description>ROS2 vendor package for cryptpp</description>
+  <maintainer email="daisuke.nishimatsu@tier4.jp">Daisuke Nishimatsu</maintainer>
+  <license>Apache License 2.0</license>  <!-- the contents of this package are Apache License 2.0 -->
+
+  <url type="website">https://github.com/weidai11/cryptopp</url>
+  <author>Wei Dai</author>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>git</buildtool_depend>
+
+  <depend>crypto++</depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
