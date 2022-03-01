@@ -2,6 +2,9 @@ name: Lint
 on:
   pull_request:
 
+env:
+  AMENT_CPPCHECK_ALLOW_SLOW_VERSIONS: true
+
 jobs:
   ament_lint_general:
     name: ament_${{ matrix.linter }}
