@@ -17,6 +17,9 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#define MCAP_IMPLEMENTATION
+#include <mcap/mcap.hpp>
+
 #include "rcutils/logging_macros.h"
 
 #include "rosbag2_storage/metadata_io.hpp"
