@@ -57,6 +57,13 @@ target_link_libraries(${PROJECT_NAME}
   ${CONAN_LIBS}
 )
 
+install(
+  DIRECTORY
+    ${MCAP_INCLUDE_DIRS}/mcap
+  DESTINATION
+    ${CMAKE_INSTALL_PREFIX}/include
+)
+
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(${PROJECT_NAME} PRIVATE "ROSBAG2_STORAGE_MCAP_BUILDING_LIBRARY")
