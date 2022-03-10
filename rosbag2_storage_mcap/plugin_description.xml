@@ -1,7 +1,7 @@
-<library path="rosbag2_storage_simplefile">
+<library path="rosbag2_storage_mcap">
   <class
-    name="simplefile"
-    type="rosbag2_storage_plugins::SimpleFileStorage"
+    name="mcap"
+    type="rosbag2_storage_plugins::MCAPStorage"
     base_class_type="rosbag2_storage::storage_interfaces::ReadWriteInterface"
   >
     <description>Sample plugin to write a simple linear file.</description>
