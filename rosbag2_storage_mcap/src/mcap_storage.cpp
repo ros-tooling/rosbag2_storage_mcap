@@ -84,9 +84,15 @@ private:
   std::unordered_map<std::string, rosbag2_storage::TopicInformation> topics_;
   rosbag2_storage::StorageFilter storage_filter_;
   std::unordered_set<std::string> filter_topics_;
+
+  std::unique_ptr<std::ifstream> input_;
+  std::unique_ptr<mcap::FileStreamReader> data_source_;
+  std::unique_ptr<mcap::McapReader> mcap_reader_;
+  std::unique_ptr<mcap::TypedRecordReader> typed_record_reader_;
 };
 
 MCAPStorage::MCAPStorage()
+: mcap_reader_(std::make_unique<mcap::McapReader>())
 {
   metadata_.storage_identifier = get_storage_identifier();
   metadata_.message_count = 0;
@@ -99,7 +105,10 @@ MCAPStorage::~MCAPStorage()
     return;
   }
 
-  // A bag that is open for READ_ONLY needs no finalizing.
+  if (opened_as_ == rosbag2_storage::storage_interfaces::IOFlag::READ_ONLY) {
+    mcap_reader_->close();
+  }
+
   // In the case of READ_WRITE (write) - we need to write the final information to the file.
   if (opened_as_ == rosbag2_storage::storage_interfaces::IOFlag::READ_WRITE) {
     // TODO(mcap)
@@ -108,7 +117,7 @@ MCAPStorage::~MCAPStorage()
 
 /** BaseIOInterface **/
 void MCAPStorage::open(
-  const rosbag2_storage::StorageOptions & /* storage_options */,
+  const rosbag2_storage::StorageOptions & storage_options,
   rosbag2_storage::storage_interfaces::IOFlag io_flag)
 {
   switch (io_flag) {
@@ -117,9 +126,17 @@ void MCAPStorage::open(
       throw std::runtime_error("MCAPStorage does not support READ_WRITE mode");
       break;
     case rosbag2_storage::storage_interfaces::IOFlag::READ_ONLY:
-      // TODO(mcap)
-      throw std::runtime_error("MCAPStorage does not support READ_ONLY mode");
-      break;
+      {
+        relative_path_ = storage_options.uri;
+        input_ = std::make_unique<std::ifstream>(relative_path_, std::ios::binary);
+        data_source_ = std::make_unique<mcap::FileStreamReader>(*input_);
+        typed_record_reader_ = std::make_unique<mcap::TypedRecordReader>(*data_source_, 8);
+        auto status = mcap_reader_->open(*data_source_);
+        if (!status.ok()) {
+          throw std::runtime_error(status.message);
+        }
+        break;
+      }
     case rosbag2_storage::storage_interfaces::IOFlag::APPEND:
       // TODO(mcap)
       throw std::runtime_error("MCAPStorage does not support APPEND mode");
@@ -132,11 +149,50 @@ void MCAPStorage::open(
 /** BaseInfoInterface **/
 rosbag2_storage::BagMetadata MCAPStorage::get_metadata()
 {
-  // TODO(mcap) this implementation is just a sample, maybe this should be different
-  if (opened_as_ == rosbag2_storage::storage_interfaces::IOFlag::READ_WRITE) {
-    metadata_.topics_with_message_count.clear();
-    for (const auto & kv : topics_) {
-      metadata_.topics_with_message_count.push_back(kv.second);
+  metadata_.version = 2;
+  metadata_.storage_identifier = get_storage_identifier();
+  metadata_.bag_size = get_bagfile_size();
+  metadata_.relative_file_paths = {get_relative_file_path()};
+  std::unordered_map<mcap::SchemaId,
+    rosbag2_storage::TopicInformation> topic_information_schema_map;
+  std::unordered_map<mcap::ChannelId,
+    rosbag2_storage::TopicInformation> topic_information_channel_map;
+  typed_record_reader_->onSchema =
+    [&topic_information_schema_map, this](const mcap::SchemaPtr schema_ptr) {
+      rosbag2_storage::TopicInformation topic_info{};
+      topic_info.topic_metadata.type = schema_ptr->name;
+      topic_info.topic_metadata.serialization_format = get_storage_identifier();
+      topic_information_schema_map.insert({schema_ptr->id, topic_info});
+    };
+  typed_record_reader_->onChannel =
+    [&topic_information_schema_map,
+      &topic_information_channel_map](const mcap::ChannelPtr channel_ptr) {
+      auto topic_info = topic_information_schema_map[channel_ptr->schemaId];
+      topic_info.topic_metadata.name = channel_ptr->topic;
+      topic_information_channel_map.insert({channel_ptr->id, topic_info});
+    };
+  typed_record_reader_->onStatistics =
+    [&topic_information_channel_map, this](const mcap::Statistics & statistics) {
+      metadata_.message_count = statistics.messageCount;
+      metadata_.duration = std::chrono::nanoseconds(
+        statistics.messageEndTime - statistics.messageStartTime);
+      metadata_.starting_time = std::chrono::time_point<std::chrono::high_resolution_clock>(
+        std::chrono::nanoseconds(statistics.messageStartTime));
+      for (auto & topic_info_with_id : topic_information_channel_map) {
+        if (statistics.channelMessageCounts.find(topic_info_with_id.first) !=
+          statistics.channelMessageCounts.end())
+        {
+          topic_info_with_id.second.message_count = statistics.channelMessageCounts.at(
+            topic_info_with_id.first);
+        }
+        metadata_.topics_with_message_count.push_back(topic_info_with_id.second);
+      }
+    };
+  bool running = true;
+  while (running) {
+    running = typed_record_reader_->next();
+    if (!typed_record_reader_->status().ok()) {
+      throw std::runtime_error(typed_record_reader_->status().message);
     }
   }
   return metadata_;
@@ -149,8 +205,7 @@ std::string MCAPStorage::get_relative_file_path() const
 
 uint64_t MCAPStorage::get_bagfile_size() const
 {
-  // TODO(mcap) is there a different way this should be calculated?
-  return std::filesystem::file_size(relative_path_);
+  return data_source_->size();
 }
 
 std::string MCAPStorage::get_storage_identifier() const
