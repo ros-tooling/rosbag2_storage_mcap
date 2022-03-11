@@ -32,6 +32,8 @@
 
 namespace rosbag2_storage_plugins {
 
+static const std::string FILE_EXTENSION = ".mcap";
+
 /**
  * A storage implementation for the MCAP file format.
  */
@@ -120,11 +122,10 @@ MCAPStorage::~MCAPStorage() {
 /** BaseIOInterface **/
 void MCAPStorage::open(const rosbag2_storage::StorageOptions& storage_options,
                        rosbag2_storage::storage_interfaces::IOFlag io_flag) {
+  relative_path_ = storage_options.uri + FILE_EXTENSION;
+
   switch (io_flag) {
-    case rosbag2_storage::storage_interfaces::IOFlag::READ_WRITE:
-      throw std::runtime_error("MCAPStorage does not support READ_WRITE mode");
     case rosbag2_storage::storage_interfaces::IOFlag::READ_ONLY: {
-      relative_path_ = storage_options.uri;
       input_ = std::make_unique<std::ifstream>(relative_path_, std::ios::binary);
       data_source_ = std::make_unique<mcap::FileStreamReader>(*input_);
       mcap_reader_ = std::make_unique<mcap::McapReader>();
@@ -138,8 +139,11 @@ void MCAPStorage::open(const rosbag2_storage::StorageOptions& storage_options,
       linear_iterator_ = std::make_unique<mcap::LinearMessageView::Iterator>(linear_view_->begin());
       break;
     }
+    case rosbag2_storage::storage_interfaces::IOFlag::READ_WRITE:
     case rosbag2_storage::storage_interfaces::IOFlag::APPEND: {
-      relative_path_ = storage_options.uri;
+      // APPEND does not seem to be used; treat it the same as READ_WRITE
+      io_flag = rosbag2_storage::storage_interfaces::IOFlag::READ_WRITE;
+
       mcap_writer_ = std::make_unique<mcap::McapWriter>();
       mcap::McapWriterOptions options{"ros2"};
       // TODO(jhurliman): Use storage_options max_bagfile_duration / max_bagfile_size
