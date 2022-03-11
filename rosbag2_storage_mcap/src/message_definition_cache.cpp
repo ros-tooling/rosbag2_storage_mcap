@@ -9,9 +9,6 @@
 
 namespace rosbag2_storage_mcap::internal {
 
-// Match entries in ament index for rosidl_interfaces (msg/Foo.msg)
-static const std::regex MSG_RESOURCE_REGEX{R"((?:^|\n)msg/(.+)\.msg(?:$|\n))"};
-
 // Match datatype names (foo_msgs/Bar or foo_msgs/msg/Bar)
 static const std::regex MSG_DATATYPE_REGEX{R"(^([a-zA-Z0-9_]+)/(?:msg/)?([a-zA-Z0-9_]+)$)"};
 
