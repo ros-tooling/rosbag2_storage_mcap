@@ -12,13 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <filesystem>
-#include <optional>
-#include <unordered_map>
-#include <unordered_set>
-
 #define MCAP_IMPLEMENTATION
 #include <mcap/mcap.hpp>
+
+#include <optional>
+#include <filesystem>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include "rcutils/logging_macros.h"
 
@@ -59,7 +63,7 @@ public:
   /** ReadOnlyInterface **/
   void set_filter(const rosbag2_storage::StorageFilter & storage_filter) override;
   void reset_filter() override;
-#if ROS_DISTRO==galactic
+#if ROS_DISTRO == galactic
   void seek(const rcutils_time_point_value_t & timestamp);
 #else
   void seek(const rcutils_time_point_value_t & timestamp) override;
@@ -86,8 +90,8 @@ private:
 
   rosbag2_storage::BagMetadata metadata_;
   std::unordered_map<std::string, rosbag2_storage::TopicInformation> topics_;
-  std::unordered_map<std::string, mcap::SchemaId> schema_ids; // datatype -> schema_id
-  std::unordered_map<std::string, mcap::ChannelId> channel_ids; // topic -> channel_id
+  std::unordered_map<std::string, mcap::SchemaId> schema_ids;  // datatype -> schema_id
+  std::unordered_map<std::string, mcap::ChannelId> channel_ids;  // topic -> channel_id
   rosbag2_storage::StorageFilter storage_filter_;
   std::unordered_set<std::string> filter_topics_;
 
@@ -143,7 +147,8 @@ void MCAPStorage::open(
           throw std::runtime_error(status.message);
         }
         linear_view_ = std::make_unique<mcap::LinearMessageView>(mcap_reader_->readMessages());
-        linear_iterator_ = std::make_unique<mcap::LinearMessageView::Iterator>(linear_view_->begin());
+        linear_iterator_ = std::make_unique<mcap::LinearMessageView::Iterator>(
+            linear_view_->begin());
         break;
       }
     case rosbag2_storage::storage_interfaces::IOFlag::APPEND:
@@ -151,7 +156,7 @@ void MCAPStorage::open(
         relative_path_ = storage_options.uri;
         mcap_writer_ = std::make_unique<mcap::McapWriter>();
         mcap::McapWriterOptions options{"ros2"};
-        // TODO: Use storage_options.max_bagfile_duration and storage_options.max_bagfile_size
+        // TODO(jhurliman): Use storage_options max_bagfile_duration / max_bagfile_size
         auto status = mcap_writer_->open(relative_path_, options);
         if (!status.ok()) {
           throw std::runtime_error(status.message);
@@ -353,10 +358,10 @@ void MCAPStorage::write(std::shared_ptr<const rosbag2_storage::SerializedBagMess
   const auto& datatype = topic_info.topic_metadata.type;
   const auto schema_it = schema_ids.find(datatype);
   if (schema_it == schema_ids.end()) {
-    // TODO: Fetch .msg file contents. At startup, build a lookup table of all
-    // datatypes to message definition paths by parsing rosidl_interfaces from
-    // AMENT_PREFIX_PATH. Here, look up the message definition path and read the
-    // file contents, dumping it into `schema.data`.
+    // TODO(jhurliman): Fetch .msg file contents. At startup, build a lookup
+    // table of all datatypes to message definition paths by parsing
+    // rosidl_interfaces from AMENT_PREFIX_PATH. Here, look up the message
+    // definition path and read the file contents, dumping it into `schema.data`
     // mcap::Schema schema;
     // schema.name = datatype;
     // schema.encoding = "ros2msg";
@@ -378,7 +383,8 @@ void MCAPStorage::write(std::shared_ptr<const rosbag2_storage::SerializedBagMess
     channel.topic = msg->topic_name;
     channel.messageEncoding = topic_info.topic_metadata.serialization_format;
     channel.schemaId = schema_id;
-    channel.metadata.emplace("offered_qos_profiles", topic_info.topic_metadata.offered_qos_profiles);
+    channel.metadata.emplace("offered_qos_profiles",
+        topic_info.topic_metadata.offered_qos_profiles);
     mcap_writer_->addChannel(channel);
     channel_ids.emplace(msg->topic_name, channel.id);
     channel_id = channel.id;
