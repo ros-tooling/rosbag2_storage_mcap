@@ -45,25 +45,6 @@ MessageSpec::MessageSpec(std::string text, const std::string& package_context)
     : dependencies(parse_dependencies(text, package_context))
     , text(std::move(text)) {}
 
-MessageDefinitionCache::MessageDefinitionCache() {
-  load_message_packages();
-}
-
-void MessageDefinitionCache::load_message_packages() {
-  for (const auto& package_and_prefix : ament_index_cpp::get_resources("rosidl_interfaces")) {
-    std::string content;
-    if (!ament_index_cpp::get_resource("rosidl_interfaces", package_and_prefix.first, content)) {
-      continue;
-    }
-    auto& msg_files = msg_files_by_package_[package_and_prefix.first];
-
-    for (std::sregex_iterator iter(content.begin(), content.end(), MSG_RESOURCE_REGEX);
-         iter != std::sregex_iterator(); ++iter) {
-      msg_files.insert((*iter)[1]);
-    }
-  }
-}
-
 const MessageSpec& MessageDefinitionCache::load_message_spec(const std::string& datatype) {
   if (auto it = msg_specs_by_datatype_.find(datatype); it != msg_specs_by_datatype_.end()) {
     return it->second;
