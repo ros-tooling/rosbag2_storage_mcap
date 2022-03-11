@@ -1,0 +1,29 @@
+---
+Language: Cpp
+Standard: c++17
+BasedOnStyle: Google
+
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortLambdasOnASingleLine: Empty
+AccessModifierOffset: -2
+TabWidth: 2
+ContinuationIndentWidth: 2
+UseTab: Never
+BreakConstructorInitializers: BeforeComma
+ColumnLimit: 100
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+DerivePointerAlignment: false
+FixNamespaceComments: true
+PointerAlignment: Left
+ReflowComments: true
+SortIncludes: true
+
+IncludeCategories:
+  - Regex: '^"'
+    Priority: 1
+  - Regex: "^<mcap"
+    Priority: 2
+  - Regex: "^<.*/"
+    Priority: 3
+  - Regex: "^<.*"
+    Priority: 4
