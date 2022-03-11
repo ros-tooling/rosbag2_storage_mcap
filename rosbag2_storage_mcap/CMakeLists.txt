@@ -23,6 +23,7 @@ find_package(pluginlib REQUIRED)
 find_package(rcutils REQUIRED)
 find_package(ros_environment REQUIRED)
 find_package(rosbag2_storage REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
   message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
