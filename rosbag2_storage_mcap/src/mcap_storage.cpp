@@ -13,13 +13,6 @@
 // limitations under the License.
 
 #define MCAP_IMPLEMENTATION
-#include <mcap/mcap.hpp>
-
-#include <rcutils/logging_macros.h>
-#include <rosbag2_storage/metadata_io.hpp>
-#include <rosbag2_storage/ros_helper.hpp>
-#include <rosbag2_storage/storage_interfaces/read_write_interface.hpp>
-
 #include <filesystem>
 #include <memory>
 #include <optional>
@@ -28,6 +21,13 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+
+#include <mcap/mcap.hpp>
+
+#include <rcutils/logging_macros.h>
+#include <rosbag2_storage/metadata_io.hpp>
+#include <rosbag2_storage/ros_helper.hpp>
+#include <rosbag2_storage/storage_interfaces/read_write_interface.hpp>
 
 namespace rosbag2_storage_plugins {
 

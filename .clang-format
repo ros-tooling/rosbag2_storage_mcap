@@ -21,13 +21,11 @@ SortIncludes: true
 IncludeCategories:
   - Regex: '^"'
     Priority: 1
-    SortPriority: 0
-  - Regex: "^<mcap"
+  - Regex: "^<[^/]*\\.h>$"
     Priority: 2
-    SortPriority: 0
-  - Regex: "^<.*/"
+  - Regex: "^<[^/]*>$"
     Priority: 3
-    SortPriority: 0
-  - Regex: "^<.*"
+  - Regex: "^<mcap"
     Priority: 4
-    SortPriority: 0
+  - Regex: "^<"
+    Priority: 5
