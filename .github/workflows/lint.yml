@@ -14,11 +14,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        linter: [copyright, xmllint, cppcheck, cpplint, clang_format]
         include:
-          - linter: copyright
-          - linter: xmllint
-          - linter: cppcheck
-          - linter: cpplint
           - linter: clang_format
             arguments: "--config .clang-format"
     steps:
@@ -26,6 +23,6 @@ jobs:
     - uses: ros-tooling/action-ros-lint@v0.1
       with:
         linter: ${{ matrix.linter }}
-        arguments: []
+        arguments: ${{ matrix.arguments }}
         distribution: rolling
         package-name: rosbag2_storage_mcap
