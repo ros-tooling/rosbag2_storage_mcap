@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "message_definition_cache.hpp"
 #include "rcutils/logging_macros.h"
 #include "rosbag2_storage/metadata_io.hpp"
 #include "rosbag2_storage/ros_helper.hpp"
@@ -96,11 +97,14 @@ private:
   std::unique_ptr<mcap::LinearMessageView::Iterator> linear_iterator_;
 
   std::unique_ptr<mcap::McapWriter> mcap_writer_;
+  rosbag2_storage_mcap::internal::MessageDefinitionCache msgdef_cache_;
 };
 
 MCAPStorage::MCAPStorage() {
   metadata_.storage_identifier = get_storage_identifier();
   metadata_.message_count = 0;
+
+  std::cerr << msgdef_cache_.get_full_text("visualization_msgs/MarkerArray") << std::endl;
 }
 
 MCAPStorage::~MCAPStorage() {

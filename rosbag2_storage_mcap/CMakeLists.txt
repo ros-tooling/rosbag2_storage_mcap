@@ -37,7 +37,7 @@ include(${CMAKE_BINARY_DIR}/conan.cmake)
 include(FetchContent)
 fetchcontent_declare(mcap
   GIT_REPOSITORY https://github.com/foxglove/mcap.git
-  GIT_TAG c7ac48c02cad025f0694e584b3afd01702914ee5
+  GIT_TAG 103e8f88b00936a6ef04d9dd25c70086f3cd5c4f
 )
 fetchcontent_makeavailable(mcap)
 
@@ -59,7 +59,11 @@ conan_cmake_install(
 include(${MCAP_ROOT}/mcap/build/Release/conanbuildinfo.cmake)
 conan_basic_setup()
 
-add_library(${PROJECT_NAME} SHARED src/mcap_storage.cpp)
+add_library(
+  ${PROJECT_NAME} SHARED
+  src/mcap_storage.cpp
+  src/message_definition_cache.cpp
+)
 target_compile_features(${PROJECT_NAME} PUBLIC c_std_99 cxx_std_17)
 target_include_directories(${PROJECT_NAME}
   SYSTEM PUBLIC
