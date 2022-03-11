@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "message_definition_cache.hpp"
 #include "rcutils/logging_macros.h"
 #include "rosbag2_storage/metadata_io.hpp"
 #include "rosbag2_storage/ros_helper.hpp"
@@ -96,6 +97,7 @@ private:
   std::unique_ptr<mcap::LinearMessageView::Iterator> linear_iterator_;
 
   std::unique_ptr<mcap::McapWriter> mcap_writer_;
+  rosbag2_storage_mcap::internal::MessageDefinitionCache msgdef_cache_;
 };
 
 MCAPStorage::MCAPStorage() {
@@ -327,19 +329,15 @@ void MCAPStorage::write(std::shared_ptr<const rosbag2_storage::SerializedBagMess
   const auto& datatype = topic_info.topic_metadata.type;
   const auto schema_it = schema_ids.find(datatype);
   if (schema_it == schema_ids.end()) {
-    // TODO(jhurliman): Fetch .msg file contents. At startup, build a lookup
-    // table of all datatypes to message definition paths by parsing
-    // rosidl_interfaces from AMENT_PREFIX_PATH. Here, look up the message
-    // definition path and read the file contents, dumping it into `schema.data`
-    // mcap::Schema schema;
-    // schema.name = datatype;
-    // schema.encoding = "ros2msg";
-    // schema.data = "FIXME";
-    // mcap_writer_->addSchema(schema);
-    // schema_ids.emplace(datatype, schema.id);
-    // schema_id = schema.id;
-    schema_id = 0;
-    schema_ids.emplace(datatype, schema_id);
+    std::string full_text = msgdef_cache_.get_full_text(datatype);
+    mcap::Schema schema;
+    schema.name = datatype;
+    schema.encoding = "ros2msg";
+    schema.data.assign(reinterpret_cast<const std::byte*>(full_text.data()),
+                       reinterpret_cast<const std::byte*>(full_text.data() + full_text.size()));
+    mcap_writer_->addSchema(schema);
+    schema_ids.emplace(datatype, schema.id);
+    schema_id = schema.id;
   } else {
     schema_id = schema_it->second;
   }
