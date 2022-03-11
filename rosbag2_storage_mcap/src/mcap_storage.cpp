@@ -103,8 +103,6 @@ private:
 MCAPStorage::MCAPStorage() {
   metadata_.storage_identifier = get_storage_identifier();
   metadata_.message_count = 0;
-
-  std::cerr << msgdef_cache_.get_full_text("visualization_msgs/MarkerArray") << std::endl;
 }
 
 MCAPStorage::~MCAPStorage() {
@@ -331,19 +329,15 @@ void MCAPStorage::write(std::shared_ptr<const rosbag2_storage::SerializedBagMess
   const auto& datatype = topic_info.topic_metadata.type;
   const auto schema_it = schema_ids.find(datatype);
   if (schema_it == schema_ids.end()) {
-    // TODO(jhurliman): Fetch .msg file contents. At startup, build a lookup
-    // table of all datatypes to message definition paths by parsing
-    // rosidl_interfaces from AMENT_PREFIX_PATH. Here, look up the message
-    // definition path and read the file contents, dumping it into `schema.data`
-    // mcap::Schema schema;
-    // schema.name = datatype;
-    // schema.encoding = "ros2msg";
-    // schema.data = "FIXME";
-    // mcap_writer_->addSchema(schema);
-    // schema_ids.emplace(datatype, schema.id);
-    // schema_id = schema.id;
-    schema_id = 0;
-    schema_ids.emplace(datatype, schema_id);
+    std::string full_text = msgdef_cache_.get_full_text(datatype);
+    mcap::Schema schema;
+    schema.name = datatype;
+    schema.encoding = "ros2msg";
+    schema.data.assign(reinterpret_cast<const std::byte*>(full_text.data()),
+                       reinterpret_cast<const std::byte*>(full_text.data() + full_text.size()));
+    mcap_writer_->addSchema(schema);
+    schema_ids.emplace(datatype, schema.id);
+    schema_id = schema.id;
   } else {
     schema_id = schema_it->second;
   }

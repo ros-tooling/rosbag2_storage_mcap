@@ -5,7 +5,6 @@
 #include <ament_index_cpp/get_resources.hpp>
 
 #include <fstream>
-#include <iostream>
 #include <regex>
 
 namespace rosbag2_storage_mcap::internal {
