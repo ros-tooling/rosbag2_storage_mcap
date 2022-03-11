@@ -32,7 +32,7 @@
 
 namespace rosbag2_storage_plugins {
 
-static const std::string FILE_EXTENSION = ".mcap";
+static const char FILE_EXTENSION[] = ".mcap";
 
 /**
  * A storage implementation for the MCAP file format.
