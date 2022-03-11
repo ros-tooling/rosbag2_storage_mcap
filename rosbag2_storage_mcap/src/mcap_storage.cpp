@@ -112,16 +112,13 @@ MCAPStorage::MCAPStorage()
 
 MCAPStorage::~MCAPStorage()
 {
-  if (mcap_reader_)
-  {
+  if (mcap_reader_) {
     mcap_reader_->close();
   }
-  if (input_)
-  {
+  if (input_) {
     input_->close();
   }
-  if (mcap_writer_)
-  {
+  if (mcap_writer_) {
     mcap_writer_->close();
   }
 }
@@ -148,7 +145,7 @@ void MCAPStorage::open(
         }
         linear_view_ = std::make_unique<mcap::LinearMessageView>(mcap_reader_->readMessages());
         linear_iterator_ = std::make_unique<mcap::LinearMessageView::Iterator>(
-            linear_view_->begin());
+          linear_view_->begin());
         break;
       }
     case rosbag2_storage::storage_interfaces::IOFlag::APPEND:
@@ -258,12 +255,12 @@ bool MCAPStorage::read_and_enqueue_message()
     return false;
   }
 
-  const auto& messageView = *it;
+  const auto & messageView = *it;
   auto msg = std::make_shared<rosbag2_storage::SerializedBagMessage>();
   msg->time_stamp = rcutils_time_point_value_t(messageView.message.logTime);
   msg->topic_name = messageView.channel->topic;
   msg->serialized_data = rosbag2_storage::make_serialized_message(
-      messageView.message.data, messageView.message.dataSize);
+    messageView.message.data, messageView.message.dataSize);
 
   // enqueue this message to be used
   next_ = msg;
@@ -351,11 +348,11 @@ void MCAPStorage::write(std::shared_ptr<const rosbag2_storage::SerializedBagMess
   if (topic_it == topics_.end()) {
     throw std::runtime_error{"Unknown message topic \"" + msg->topic_name + "\""};
   }
-  const auto& topic_info = topic_it->second;
+  const auto & topic_info = topic_it->second;
 
   // Get or create a Schema reference
   mcap::SchemaId schema_id;
-  const auto& datatype = topic_info.topic_metadata.type;
+  const auto & datatype = topic_info.topic_metadata.type;
   const auto schema_it = schema_ids.find(datatype);
   if (schema_it == schema_ids.end()) {
     // TODO(jhurliman): Fetch .msg file contents. At startup, build a lookup
@@ -383,8 +380,9 @@ void MCAPStorage::write(std::shared_ptr<const rosbag2_storage::SerializedBagMess
     channel.topic = msg->topic_name;
     channel.messageEncoding = topic_info.topic_metadata.serialization_format;
     channel.schemaId = schema_id;
-    channel.metadata.emplace("offered_qos_profiles",
-        topic_info.topic_metadata.offered_qos_profiles);
+    channel.metadata.emplace(
+      "offered_qos_profiles",
+      topic_info.topic_metadata.offered_qos_profiles);
     mcap_writer_->addChannel(channel);
     channel_ids.emplace(msg->topic_name, channel.id);
     channel_id = channel.id;
@@ -398,12 +396,12 @@ void MCAPStorage::write(std::shared_ptr<const rosbag2_storage::SerializedBagMess
   mcapMsg.logTime = mcap::Timestamp(std::chrono::nanoseconds(msg->time_stamp).count());
   mcapMsg.publishTime = mcapMsg.logTime;
   mcapMsg.dataSize = msg->serialized_data->buffer_length;
-  mcapMsg.data = reinterpret_cast<const std::byte*>(msg->serialized_data->buffer);
+  mcapMsg.data = reinterpret_cast<const std::byte *>(msg->serialized_data->buffer);
   const auto status = mcap_writer_->write(mcapMsg);
   if (!status.ok()) {
     throw std::runtime_error{std::string{"Failed to write "} +
-        std::to_string(msg->serialized_data->buffer_length) +
-           " byte message to MCAP file: " + status.message};
+            std::to_string(msg->serialized_data->buffer_length) +
+            " byte message to MCAP file: " + status.message};
   }
 
   /// Update metadata
