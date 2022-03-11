@@ -59,7 +59,11 @@ public:
   /** ReadOnlyInterface **/
   void set_filter(const rosbag2_storage::StorageFilter & storage_filter) override;
   void reset_filter() override;
+#if ROS_DISTRO==galactic
+  void seek(const rcutils_time_point_value_t & timestamp);
+#else
   void seek(const rcutils_time_point_value_t & timestamp) override;
+#endif
 
   /** ReadWriteInterface **/
   uint64_t get_minimum_split_file_size() const override;
@@ -82,17 +86,21 @@ private:
 
   rosbag2_storage::BagMetadata metadata_;
   std::unordered_map<std::string, rosbag2_storage::TopicInformation> topics_;
+  std::unordered_map<std::string, mcap::SchemaId> schema_ids; // datatype -> schema_id
+  std::unordered_map<std::string, mcap::ChannelId> channel_ids; // topic -> channel_id
   rosbag2_storage::StorageFilter storage_filter_;
   std::unordered_set<std::string> filter_topics_;
 
   std::unique_ptr<std::ifstream> input_;
   std::unique_ptr<mcap::FileStreamReader> data_source_;
   std::unique_ptr<mcap::McapReader> mcap_reader_;
-  std::unique_ptr<mcap::TypedRecordReader> typed_record_reader_;
+  std::unique_ptr<mcap::LinearMessageView> linear_view_;
+  std::unique_ptr<mcap::LinearMessageView::Iterator> linear_iterator_;
+
+  std::unique_ptr<mcap::McapWriter> mcap_writer_;
 };
 
 MCAPStorage::MCAPStorage()
-: mcap_reader_(std::make_unique<mcap::McapReader>())
 {
   metadata_.storage_identifier = get_storage_identifier();
   metadata_.message_count = 0;
@@ -100,18 +108,17 @@ MCAPStorage::MCAPStorage()
 
 MCAPStorage::~MCAPStorage()
 {
-  // A bag that has not been opened needs no finalizing.
-  if (!opened_as_) {
-    return;
-  }
-
-  if (opened_as_ == rosbag2_storage::storage_interfaces::IOFlag::READ_ONLY) {
+  if (mcap_reader_)
+  {
     mcap_reader_->close();
   }
-
-  // In the case of READ_WRITE (write) - we need to write the final information to the file.
-  if (opened_as_ == rosbag2_storage::storage_interfaces::IOFlag::READ_WRITE) {
-    // TODO(mcap)
+  if (input_)
+  {
+    input_->close();
+  }
+  if (mcap_writer_)
+  {
+    mcap_writer_->close();
   }
 }
 
@@ -122,25 +129,35 @@ void MCAPStorage::open(
 {
   switch (io_flag) {
     case rosbag2_storage::storage_interfaces::IOFlag::READ_WRITE:
-      // TODO(mcap)
       throw std::runtime_error("MCAPStorage does not support READ_WRITE mode");
-      break;
     case rosbag2_storage::storage_interfaces::IOFlag::READ_ONLY:
       {
         relative_path_ = storage_options.uri;
         input_ = std::make_unique<std::ifstream>(relative_path_, std::ios::binary);
         data_source_ = std::make_unique<mcap::FileStreamReader>(*input_);
-        typed_record_reader_ = std::make_unique<mcap::TypedRecordReader>(*data_source_, 8);
-        auto status = mcap_reader_->open(*data_source_);
+        mcap_reader_ = std::make_unique<mcap::McapReader>();
+        mcap::McapReaderOptions options;
+        options.allowFallbackScan = true;
+        auto status = mcap_reader_->open(*data_source_, options);
+        if (!status.ok()) {
+          throw std::runtime_error(status.message);
+        }
+        linear_view_ = std::make_unique<mcap::LinearMessageView>(mcap_reader_->readMessages());
+        linear_iterator_ = std::make_unique<mcap::LinearMessageView::Iterator>(linear_view_->begin());
+        break;
+      }
+    case rosbag2_storage::storage_interfaces::IOFlag::APPEND:
+      {
+        relative_path_ = storage_options.uri;
+        mcap_writer_ = std::make_unique<mcap::McapWriter>();
+        mcap::McapWriterOptions options{"ros2"};
+        // TODO: Use storage_options.max_bagfile_duration and storage_options.max_bagfile_size
+        auto status = mcap_writer_->open(relative_path_, options);
         if (!status.ok()) {
           throw std::runtime_error(status.message);
         }
         break;
       }
-    case rosbag2_storage::storage_interfaces::IOFlag::APPEND:
-      // TODO(mcap)
-      throw std::runtime_error("MCAPStorage does not support APPEND mode");
-      break;
   }
   opened_as_ = io_flag;
   metadata_.relative_file_paths = {get_relative_file_path()};
@@ -157,21 +174,25 @@ rosbag2_storage::BagMetadata MCAPStorage::get_metadata()
     rosbag2_storage::TopicInformation> topic_information_schema_map;
   std::unordered_map<mcap::ChannelId,
     rosbag2_storage::TopicInformation> topic_information_channel_map;
-  typed_record_reader_->onSchema =
+
+  // Create a TypedRecordReader that will perform a linear scan of the MCAP file.
+  // This will be a fallback once index parsing is implemented in McapReader
+  mcap::TypedRecordReader typed_record_reader{*data_source_, 8};
+  typed_record_reader.onSchema =
     [&topic_information_schema_map, this](const mcap::SchemaPtr schema_ptr) {
       rosbag2_storage::TopicInformation topic_info{};
       topic_info.topic_metadata.type = schema_ptr->name;
-      topic_info.topic_metadata.serialization_format = get_storage_identifier();
+      topic_info.topic_metadata.serialization_format = schema_ptr->encoding;
       topic_information_schema_map.insert({schema_ptr->id, topic_info});
     };
-  typed_record_reader_->onChannel =
+  typed_record_reader.onChannel =
     [&topic_information_schema_map,
       &topic_information_channel_map](const mcap::ChannelPtr channel_ptr) {
       auto topic_info = topic_information_schema_map[channel_ptr->schemaId];
       topic_info.topic_metadata.name = channel_ptr->topic;
       topic_information_channel_map.insert({channel_ptr->id, topic_info});
     };
-  typed_record_reader_->onStatistics =
+  typed_record_reader.onStatistics =
     [&topic_information_channel_map, this](const mcap::Statistics & statistics) {
       metadata_.message_count = statistics.messageCount;
       metadata_.duration = std::chrono::nanoseconds(
@@ -188,11 +209,11 @@ rosbag2_storage::BagMetadata MCAPStorage::get_metadata()
         metadata_.topics_with_message_count.push_back(topic_info_with_id.second);
       }
     };
-  bool running = true;
-  while (running) {
-    running = typed_record_reader_->next();
-    if (!typed_record_reader_->status().ok()) {
-      throw std::runtime_error(typed_record_reader_->status().message);
+
+  while (typed_record_reader.next()) {
+    const auto status = typed_record_reader.status();
+    if (!status.ok()) {
+      throw std::runtime_error(status.message);
     }
   }
   return metadata_;
@@ -216,8 +237,8 @@ std::string MCAPStorage::get_storage_identifier() const
 /** BaseReadInterface **/
 bool MCAPStorage::read_and_enqueue_message()
 {
-  // The bag has not been opened.
-  if (!opened_as_) {
+  // The recording has not been opened.
+  if (!linear_iterator_) {
     return false;
   }
   // Already have popped and queued the next message.
@@ -225,17 +246,30 @@ bool MCAPStorage::read_and_enqueue_message()
     return true;
   }
 
+  auto it = *linear_iterator_;
+
+  // At the end of the recording
+  if (it == linear_view_->end()) {
+    return false;
+  }
+
+  const auto& messageView = *it;
   auto msg = std::make_shared<rosbag2_storage::SerializedBagMessage>();
-  // TODO(mcap): fill msg
+  msg->time_stamp = rcutils_time_point_value_t(messageView.message.logTime);
+  msg->topic_name = messageView.channel->topic;
+  msg->serialized_data = rosbag2_storage::make_serialized_message(
+      messageView.message.data, messageView.message.dataSize);
 
   // enqueue this message to be used
   next_ = msg;
+
+  ++it;
   return true;
 }
 
 bool MCAPStorage::has_next()
 {
-  if (!opened_as_) {
+  if (!linear_iterator_) {
     return false;
   }
   // Have already verified next message and enqueued it for use.
@@ -292,6 +326,7 @@ void MCAPStorage::reset_filter()
 void MCAPStorage::seek(const rcutils_time_point_value_t & /* time_stamp */)
 {
   // TODO(mcap)
+  throw std::runtime_error{"seek() is not implemented."};
 }
 
 /** ReadWriteInterface **/
@@ -307,9 +342,67 @@ void MCAPStorage::write(std::shared_ptr<const rosbag2_storage::SerializedBagMess
   // TODO(mcap) - also note that metadata update could be done differently
   // - maybe MCAP library tracks those values and we should just query them
 
+  const auto topic_it = topics_.find(msg->topic_name);
+  if (topic_it == topics_.end()) {
+    throw std::runtime_error{"Unknown message topic \"" + msg->topic_name + "\""};
+  }
+  const auto& topic_info = topic_it->second;
+
+  // Get or create a Schema reference
+  mcap::SchemaId schema_id;
+  const auto& datatype = topic_info.topic_metadata.type;
+  const auto schema_it = schema_ids.find(datatype);
+  if (schema_it == schema_ids.end()) {
+    // TODO: Fetch .msg file contents. At startup, build a lookup table of all
+    // datatypes to message definition paths by parsing rosidl_interfaces from
+    // AMENT_PREFIX_PATH. Here, look up the message definition path and read the
+    // file contents, dumping it into `schema.data`.
+    // mcap::Schema schema;
+    // schema.name = datatype;
+    // schema.encoding = "ros2msg";
+    // schema.data = "FIXME";
+    // mcap_writer_->addSchema(schema);
+    // schema_ids.emplace(datatype, schema.id);
+    // schema_id = schema.id;
+    schema_id = 0;
+    schema_ids.emplace(datatype, schema_id);
+  } else {
+    schema_id = schema_it->second;
+  }
+
+  // Get or create a Channel reference
+  mcap::ChannelId channel_id;
+  const auto channel_it = channel_ids.find(msg->topic_name);
+  if (channel_it == channel_ids.end()) {
+    mcap::Channel channel;
+    channel.topic = msg->topic_name;
+    channel.messageEncoding = topic_info.topic_metadata.serialization_format;
+    channel.schemaId = schema_id;
+    channel.metadata.emplace("offered_qos_profiles", topic_info.topic_metadata.offered_qos_profiles);
+    mcap_writer_->addChannel(channel);
+    channel_ids.emplace(msg->topic_name, channel.id);
+    channel_id = channel.id;
+  } else {
+    channel_id = channel_it->second;
+  }
+
+  mcap::Message mcapMsg;
+  mcapMsg.channelId = channel_id;
+  mcapMsg.sequence = 0;
+  mcapMsg.logTime = mcap::Timestamp(std::chrono::nanoseconds(msg->time_stamp).count());
+  mcapMsg.publishTime = mcapMsg.logTime;
+  mcapMsg.dataSize = msg->serialized_data->buffer_length;
+  mcapMsg.data = reinterpret_cast<const std::byte*>(msg->serialized_data->buffer);
+  const auto status = mcap_writer_->write(mcapMsg);
+  if (!status.ok()) {
+    throw std::runtime_error{std::string{"Failed to write "} +
+        std::to_string(msg->serialized_data->buffer_length) +
+        " byte message to MCAP file: " + status.message};
+  }
+
   /// Update metadata
   // Increment individual topic message count
-  topics_.at(msg->topic_name).message_count++;
+  topic_it->second.message_count++;
   // Increment global message count
   metadata_.message_count++;
   // Determine bag duration. Note: this assumes in-order writes.
@@ -328,15 +421,13 @@ void MCAPStorage::write(
 
 void MCAPStorage::create_topic(const rosbag2_storage::TopicMetadata & topic)
 {
-  // TODO(mcap)
   if (topics_.find(topic.name) == topics_.end()) {
-    topics_[topic.name] = rosbag2_storage::TopicInformation{topic, 0};
+    topics_.emplace(topic.name, rosbag2_storage::TopicInformation{topic, 0});
   }
 }
 
 void MCAPStorage::remove_topic(const rosbag2_storage::TopicMetadata & topic)
 {
-  // TODO(mcap)
   topics_.erase(topic.name);
 }
 

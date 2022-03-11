@@ -1,14 +1,28 @@
 cmake_minimum_required(VERSION 3.14)
 project(rosbag2_storage_mcap)
 
+# Set Release build if no build type was specified
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+      "Build type for the build. Possible values are: Debug, Release, RelWithDebInfo, MinSizeRel"
+      FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+      "Debug" "Release" "RelWithDebInfo" "MinSizeRel")
+endif()
+
+# Enable additional warnings and warnings as errors
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+# Get the ROS_DISTRO environment variable
+set(ROS_DISTRO $ENV{ROS_DISTRO})
+
 find_package(ament_cmake REQUIRED)
 find_package(pluginlib REQUIRED)
-find_package(rosbag2_storage REQUIRED)
 find_package(rcutils REQUIRED)
+find_package(ros_environment REQUIRED)
+find_package(rosbag2_storage REQUIRED)
 
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
   message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
@@ -57,6 +71,8 @@ target_link_libraries(${PROJECT_NAME}
   ${CONAN_LIBS}
 )
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE ROS_DISTRO=${ROS_DISTRO})
+
 install(
   DIRECTORY
     ${MCAP_INCLUDE_DIRS}/mcap
@@ -71,6 +87,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE "ROSBAG2_STORAGE_MCAP_BUILDIN
 ament_target_dependencies(${PROJECT_NAME}
   pluginlib
   rcutils
+  ros_environment
   rosbag2_storage
 )
 

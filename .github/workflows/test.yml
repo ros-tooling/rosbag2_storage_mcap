@@ -21,16 +21,6 @@ jobs:
       with:
         package-name: rosbag2_storage_mcap
         target-ros2-distro: rolling
-        colcon-defaults: |
-          {
-            "build": {
-              "cmake-args": [
-                "-DCMAKE_BUILD_TYPE=Release"
-              ]
-            },
-            "test": {
-            }
-          }
     - uses: actions/upload-artifact@v1
       with:
         name: colcon-logs
