@@ -137,7 +137,7 @@ void MCAPStorage::open(
         input_ = std::make_unique<std::ifstream>(relative_path_, std::ios::binary);
         data_source_ = std::make_unique<mcap::FileStreamReader>(*input_);
         mcap_reader_ = std::make_unique<mcap::McapReader>();
-        mcap::McapReaderOptions options;
+        mcap::McapReaderOptions options{};
         options.allowFallbackScan = true;
         auto status = mcap_reader_->open(*data_source_, options);
         if (!status.ok()) {
