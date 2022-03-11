@@ -403,7 +403,7 @@ void MCAPStorage::write(std::shared_ptr<const rosbag2_storage::SerializedBagMess
   if (!status.ok()) {
     throw std::runtime_error{std::string{"Failed to write "} +
         std::to_string(msg->serialized_data->buffer_length) +
-        " byte message to MCAP file: " + status.message};
+           " byte message to MCAP file: " + status.message};
   }
 
   /// Update metadata
