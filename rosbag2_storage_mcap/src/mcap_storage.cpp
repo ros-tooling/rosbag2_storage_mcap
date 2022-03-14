@@ -30,6 +30,15 @@
 #include <utility>
 #include <vector>
 
+namespace {
+std::string from_schema_encoding_to_serialization_format(const std::string& encoding) {
+  if (encoding == "ros2msg") {
+    return "cdr";
+  }
+  return "";
+}
+}  // namespace
+
 namespace rosbag2_storage_plugins {
 
 static const char FILE_EXTENSION[] = ".mcap";
@@ -122,10 +131,9 @@ MCAPStorage::~MCAPStorage() {
 /** BaseIOInterface **/
 void MCAPStorage::open(const rosbag2_storage::StorageOptions& storage_options,
                        rosbag2_storage::storage_interfaces::IOFlag io_flag) {
-  relative_path_ = storage_options.uri + FILE_EXTENSION;
-
   switch (io_flag) {
     case rosbag2_storage::storage_interfaces::IOFlag::READ_ONLY: {
+      relative_path_ = storage_options.uri;
       input_ = std::make_unique<std::ifstream>(relative_path_, std::ios::binary);
       data_source_ = std::make_unique<mcap::FileStreamReader>(*input_);
       mcap_reader_ = std::make_unique<mcap::McapReader>();
@@ -143,6 +151,7 @@ void MCAPStorage::open(const rosbag2_storage::StorageOptions& storage_options,
     case rosbag2_storage::storage_interfaces::IOFlag::APPEND: {
       // APPEND does not seem to be used; treat it the same as READ_WRITE
       io_flag = rosbag2_storage::storage_interfaces::IOFlag::READ_WRITE;
+      relative_path_ = storage_options.uri + FILE_EXTENSION;
 
       mcap_writer_ = std::make_unique<mcap::McapWriter>();
       mcap::McapWriterOptions options{"ros2"};
@@ -176,7 +185,8 @@ rosbag2_storage::BagMetadata MCAPStorage::get_metadata() {
                                   this](const mcap::SchemaPtr schema_ptr) {
     rosbag2_storage::TopicInformation topic_info{};
     topic_info.topic_metadata.type = schema_ptr->name;
-    topic_info.topic_metadata.serialization_format = schema_ptr->encoding;
+    topic_info.topic_metadata.serialization_format =
+      from_schema_encoding_to_serialization_format(schema_ptr->encoding);
     topic_information_schema_map.insert({schema_ptr->id, topic_info});
   };
   typed_record_reader.onChannel = [&topic_information_schema_map, &topic_information_channel_map](
