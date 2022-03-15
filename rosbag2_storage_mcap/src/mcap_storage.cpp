@@ -245,7 +245,7 @@ bool MCAPStorage::read_and_enqueue_message() {
     return true;
   }
 
-  auto it = *linear_iterator_;
+  auto& it = *linear_iterator_;
 
   // At the end of the recording
   if (it == linear_view_->end()) {
