@@ -32,6 +32,7 @@
 
 namespace rosbag2_storage_plugins {
 
+using mcap::ByteOffset;
 static const char FILE_EXTENSION[] = ".mcap";
 
 /**
@@ -122,16 +123,13 @@ MCAPStorage::~MCAPStorage() {
 /** BaseIOInterface **/
 void MCAPStorage::open(const rosbag2_storage::StorageOptions& storage_options,
                        rosbag2_storage::storage_interfaces::IOFlag io_flag) {
-  relative_path_ = storage_options.uri + FILE_EXTENSION;
-
   switch (io_flag) {
     case rosbag2_storage::storage_interfaces::IOFlag::READ_ONLY: {
+      relative_path_ = storage_options.uri;
       input_ = std::make_unique<std::ifstream>(relative_path_, std::ios::binary);
       data_source_ = std::make_unique<mcap::FileStreamReader>(*input_);
       mcap_reader_ = std::make_unique<mcap::McapReader>();
-      mcap::McapReaderOptions options{};
-      options.allowFallbackScan = true;
-      auto status = mcap_reader_->open(*data_source_, options);
+      auto status = mcap_reader_->open(*data_source_);
       if (!status.ok()) {
         throw std::runtime_error(status.message);
       }
@@ -143,6 +141,7 @@ void MCAPStorage::open(const rosbag2_storage::StorageOptions& storage_options,
     case rosbag2_storage::storage_interfaces::IOFlag::APPEND: {
       // APPEND does not seem to be used; treat it the same as READ_WRITE
       io_flag = rosbag2_storage::storage_interfaces::IOFlag::READ_WRITE;
+      relative_path_ = storage_options.uri + FILE_EXTENSION;
 
       mcap_writer_ = std::make_unique<mcap::McapWriter>();
       mcap::McapWriterOptions options{"ros2"};
@@ -172,21 +171,23 @@ rosbag2_storage::BagMetadata MCAPStorage::get_metadata() {
   // Create a TypedRecordReader that will perform a linear scan of the MCAP file.
   // This will be a fallback once index parsing is implemented in McapReader
   mcap::TypedRecordReader typed_record_reader{*data_source_, 8};
-  typed_record_reader.onSchema = [&topic_information_schema_map,
-                                  this](const mcap::SchemaPtr schema_ptr) {
+  typed_record_reader.onSchema = [&topic_information_schema_map, this](
+                                   const mcap::SchemaPtr schema_ptr, ByteOffset,
+                                   std::optional<ByteOffset>) {
     rosbag2_storage::TopicInformation topic_info{};
     topic_info.topic_metadata.type = schema_ptr->name;
-    topic_info.topic_metadata.serialization_format = schema_ptr->encoding;
     topic_information_schema_map.insert({schema_ptr->id, topic_info});
   };
   typed_record_reader.onChannel = [&topic_information_schema_map, &topic_information_channel_map](
-                                    const mcap::ChannelPtr channel_ptr) {
+                                    const mcap::ChannelPtr channel_ptr, ByteOffset,
+                                    std::optional<ByteOffset>) {
     auto topic_info = topic_information_schema_map[channel_ptr->schemaId];
     topic_info.topic_metadata.name = channel_ptr->topic;
+    topic_info.topic_metadata.serialization_format = channel_ptr->messageEncoding;
     topic_information_channel_map.insert({channel_ptr->id, topic_info});
   };
-  typed_record_reader.onStatistics = [&topic_information_channel_map,
-                                      this](const mcap::Statistics& statistics) {
+  typed_record_reader.onStatistics = [&topic_information_channel_map, this](
+                                       const mcap::Statistics& statistics, ByteOffset) {
     metadata_.message_count = statistics.messageCount;
     metadata_.duration =
       std::chrono::nanoseconds(statistics.messageEndTime - statistics.messageStartTime);
@@ -234,7 +235,7 @@ bool MCAPStorage::read_and_enqueue_message() {
     return true;
   }
 
-  auto it = *linear_iterator_;
+  auto& it = *linear_iterator_;
 
   // At the end of the recording
   if (it == linear_view_->end()) {

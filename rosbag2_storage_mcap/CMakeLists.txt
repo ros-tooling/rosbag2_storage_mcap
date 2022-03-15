@@ -38,7 +38,7 @@ include(${CMAKE_BINARY_DIR}/conan.cmake)
 include(FetchContent)
 fetchcontent_declare(mcap
   GIT_REPOSITORY https://github.com/foxglove/mcap.git
-  GIT_TAG 103e8f88b00936a6ef04d9dd25c70086f3cd5c4f
+  GIT_TAG 3d19068feb5a78d0073e58b1cf514bad689df94a
 )
 fetchcontent_makeavailable(mcap)
 
