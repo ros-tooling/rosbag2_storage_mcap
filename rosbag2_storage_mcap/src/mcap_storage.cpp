@@ -30,15 +30,6 @@
 #include <utility>
 #include <vector>
 
-namespace {
-std::string from_schema_encoding_to_serialization_format(const std::string& encoding) {
-  if (encoding == "ros2msg") {
-    return "cdr";
-  }
-  return "";
-}
-}  // namespace
-
 namespace rosbag2_storage_plugins {
 
 using mcap::ByteOffset;
@@ -185,8 +176,6 @@ rosbag2_storage::BagMetadata MCAPStorage::get_metadata() {
                                    std::optional<ByteOffset>) {
     rosbag2_storage::TopicInformation topic_info{};
     topic_info.topic_metadata.type = schema_ptr->name;
-    topic_info.topic_metadata.serialization_format =
-      from_schema_encoding_to_serialization_format(schema_ptr->encoding);
     topic_information_schema_map.insert({schema_ptr->id, topic_info});
   };
   typed_record_reader.onChannel = [&topic_information_schema_map, &topic_information_channel_map](
@@ -194,6 +183,7 @@ rosbag2_storage::BagMetadata MCAPStorage::get_metadata() {
                                     std::optional<ByteOffset>) {
     auto topic_info = topic_information_schema_map[channel_ptr->schemaId];
     topic_info.topic_metadata.name = channel_ptr->topic;
+    topic_info.topic_metadata.serialization_format = channel_ptr->messageEncoding;
     topic_information_channel_map.insert({channel_ptr->id, topic_info});
   };
   typed_record_reader.onStatistics = [&topic_information_channel_map, this](
