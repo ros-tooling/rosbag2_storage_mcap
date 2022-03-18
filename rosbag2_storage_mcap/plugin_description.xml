@@ -4,6 +4,6 @@
     type="rosbag2_storage_plugins::MCAPStorage"
     base_class_type="rosbag2_storage::storage_interfaces::ReadWriteInterface"
   >
-    <description>Sample plugin to write a simple linear file.</description>
+    <description>rosbag2 storage plugin using the MCAP file format</description>
   </class>
 </library>

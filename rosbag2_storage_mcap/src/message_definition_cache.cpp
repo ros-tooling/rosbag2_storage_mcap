@@ -1,4 +1,4 @@
-// Copyright 2022, Amazon.com Inc or its Affiliates. All rights reserved.
+// Copyright 2022, Foxglove Technologies. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
