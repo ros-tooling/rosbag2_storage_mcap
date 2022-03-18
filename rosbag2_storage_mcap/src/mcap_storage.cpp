@@ -30,6 +30,8 @@
 #include "rosbag2_storage/ros_helper.hpp"
 #include "rosbag2_storage/storage_interfaces/read_write_interface.hpp"
 
+#define MCAP_STORAGE_VERSION "0.0.0"
+
 namespace rosbag2_storage_plugins
 {
 
@@ -153,6 +155,7 @@ void MCAPStorage::open(
         relative_path_ = storage_options.uri;
         mcap_writer_ = std::make_unique<mcap::McapWriter>();
         mcap::McapWriterOptions options{"ros2"};
+        options.library = "rosbag2_storage_mcap " MCAP_STORAGE_VERSION + "," + options.library;
         // TODO(jhurliman): Use storage_options max_bagfile_duration / max_bagfile_size
         auto status = mcap_writer_->open(relative_path_, options);
         if (!status.ok()) {
@@ -169,56 +172,63 @@ void MCAPStorage::open(
 rosbag2_storage::BagMetadata MCAPStorage::get_metadata()
 {
   metadata_.version = 2;
-  metadata_.storage_identifier = get_storage_identifier();
-  metadata_.bag_size = get_bagfile_size();
-  metadata_.relative_file_paths = {get_relative_file_path()};
-  std::unordered_map<mcap::SchemaId,
-    rosbag2_storage::TopicInformation> topic_information_schema_map;
-  std::unordered_map<mcap::ChannelId,
-    rosbag2_storage::TopicInformation> topic_information_channel_map;
 
-  // Create a TypedRecordReader that will perform a linear scan of the MCAP file.
-  // This will be a fallback once index parsing is implemented in McapReader
-  mcap::TypedRecordReader typed_record_reader{*data_source_, 8};
-  typed_record_reader.onSchema =
-    [&topic_information_schema_map, this](const mcap::SchemaPtr schema_ptr) {
-      rosbag2_storage::TopicInformation topic_info{};
-      topic_info.topic_metadata.type = schema_ptr->name;
-      topic_info.topic_metadata.serialization_format = schema_ptr->encoding;
-      topic_information_schema_map.insert({schema_ptr->id, topic_info});
-    };
-  typed_record_reader.onChannel =
-    [&topic_information_schema_map,
-      &topic_information_channel_map](const mcap::ChannelPtr channel_ptr) {
-      auto topic_info = topic_information_schema_map[channel_ptr->schemaId];
-      topic_info.topic_metadata.name = channel_ptr->topic;
-      topic_information_channel_map.insert({channel_ptr->id, topic_info});
-    };
-  typed_record_reader.onStatistics =
-    [&topic_information_channel_map, this](const mcap::Statistics & statistics) {
-      metadata_.message_count = statistics.messageCount;
-      metadata_.duration = std::chrono::nanoseconds(
-        statistics.messageEndTime - statistics.messageStartTime);
-      metadata_.starting_time = std::chrono::time_point<std::chrono::high_resolution_clock>(
-        std::chrono::nanoseconds(statistics.messageStartTime));
-      for (auto & topic_info_with_id : topic_information_channel_map) {
-        if (statistics.channelMessageCounts.find(topic_info_with_id.first) !=
-          statistics.channelMessageCounts.end())
-        {
-          topic_info_with_id.second.message_count = statistics.channelMessageCounts.at(
-            topic_info_with_id.first);
+  if (opened_as_ == rosbag2_storage::storage_interfaces::IOFlag::APPEND) {
+    // Write mode. metadata_ is kept up to date per write
+    return metadata_;
+  } else {
+    // Read mode. Perform a full scan of the file to get the metadata
+    metadata_.storage_identifier = get_storage_identifier();
+    metadata_.bag_size = get_bagfile_size();
+    metadata_.relative_file_paths = {get_relative_file_path()};
+    std::unordered_map<mcap::SchemaId,
+      rosbag2_storage::TopicInformation> topic_information_schema_map;
+    std::unordered_map<mcap::ChannelId,
+      rosbag2_storage::TopicInformation> topic_information_channel_map;
+
+    // Create a TypedRecordReader that will perform a linear scan of the MCAP file.
+    // This will be a fallback once index parsing is implemented in McapReader
+    mcap::TypedRecordReader typed_record_reader{*data_source_, 8};
+    typed_record_reader.onSchema =
+      [&topic_information_schema_map, this](const mcap::SchemaPtr schema_ptr) {
+        rosbag2_storage::TopicInformation topic_info{};
+        topic_info.topic_metadata.type = schema_ptr->name;
+        topic_info.topic_metadata.serialization_format = schema_ptr->encoding;
+        topic_information_schema_map.insert({schema_ptr->id, topic_info});
+      };
+    typed_record_reader.onChannel =
+      [&topic_information_schema_map,
+        &topic_information_channel_map](const mcap::ChannelPtr channel_ptr) {
+        auto topic_info = topic_information_schema_map[channel_ptr->schemaId];
+        topic_info.topic_metadata.name = channel_ptr->topic;
+        topic_information_channel_map.insert({channel_ptr->id, topic_info});
+      };
+    typed_record_reader.onStatistics =
+      [&topic_information_channel_map, this](const mcap::Statistics & statistics) {
+        metadata_.message_count = statistics.messageCount;
+        metadata_.duration = std::chrono::nanoseconds(
+          statistics.messageEndTime - statistics.messageStartTime);
+        metadata_.starting_time = std::chrono::time_point<std::chrono::high_resolution_clock>(
+          std::chrono::nanoseconds(statistics.messageStartTime));
+        for (auto & topic_info_with_id : topic_information_channel_map) {
+          if (statistics.channelMessageCounts.find(topic_info_with_id.first) !=
+            statistics.channelMessageCounts.end())
+          {
+            topic_info_with_id.second.message_count = statistics.channelMessageCounts.at(
+              topic_info_with_id.first);
+          }
+          metadata_.topics_with_message_count.push_back(topic_info_with_id.second);
         }
-        metadata_.topics_with_message_count.push_back(topic_info_with_id.second);
-      }
-    };
+      };
 
-  while (typed_record_reader.next()) {
-    const auto status = typed_record_reader.status();
-    if (!status.ok()) {
-      throw std::runtime_error(status.message);
+    while (typed_record_reader.next()) {
+      const auto status = typed_record_reader.status();
+      if (!status.ok()) {
+        throw std::runtime_error(status.message);
+      }
     }
+    return metadata_;
   }
-  return metadata_;
 }
 
 std::string MCAPStorage::get_relative_file_path() const
@@ -228,7 +238,11 @@ std::string MCAPStorage::get_relative_file_path() const
 
 uint64_t MCAPStorage::get_bagfile_size() const
 {
-  return data_source_->size();
+  if (opened_as_ == rosbag2_storage::storage_interfaces::IOFlag::APPEND) {
+    return mcap_writer_ ? mcap_writer_->getOutput().size() : 0;
+  } else {
+    return data_source_ ? data_source_->size() : 0;
+  }
 }
 
 std::string MCAPStorage::get_storage_identifier() const
@@ -334,8 +348,27 @@ void MCAPStorage::seek(const rcutils_time_point_value_t & /* time_stamp */)
 /** ReadWriteInterface **/
 uint64_t MCAPStorage::get_minimum_split_file_size() const
 {
-  // TODO(mcap)
-  return 0;
+  constexpr size_t MIN_MCAP_SIZE =
+      sizeof(mcap::Magic) +
+      mcap::internal::MinHeaderLength /*mcap::Header::minSize()*/ +
+      9 + 4 + 4 /*mcap::Metadata::minSize()*/ +
+      9 + 8 + 8 + 8 + 4 + 4 + 8 /*mcap::Chunk::minSize()*/ +
+      9 + 2 + 4 + 4 + 4 /*mcap::Schema::minSize()*/ +
+      9 + 2 + 2 + 4 + 4 + 4 /*mcap::Channel::minSize()*/ +
+      9 + 2 + 4 + 8 + 8 /*mcap::Message::minSize()*/ +
+      9 + 2 + 4 /*mcap::MessageIndex::minSize()*/ +
+        8 + 8 +
+      9 + 4 /*mcap::DataEnd::minSize()*/ +
+      9 + 2 + 2 + 4 + 4 + 4 /*mcap::Channel::minSize()*/ +
+      9 + 2 + 4 + 4 + 4 /*mcap::Schema::minSize()*/ +
+      9 + 8 + 8 + 4 /*mcap::MetadataIndex::minSize()*/ +
+      9 + 8 + 8 + 8 + 8 + 4 + 8 + 4 + 8 + 8 /*mcap::ChunkIndex::minSize()*/ +
+        2 + 8 +
+      9 + 1 + 8 + 8 /*mcap::SummaryOffset::minSize()*/ * 4 +
+      9 + 8 + 2 + 4 + 4 + 4 + 4 + 8 + 8 + 4 /*mcap::Statistics::minSize()*/ +
+      mcap::internal::FooterLength /*mcap::Footer::minSize()*/ +
+      sizeof(mcap::Magic);
+  return MIN_MCAP_SIZE;
 }
 
 /** BaseWriteInterface **/
