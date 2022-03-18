@@ -1,6 +1,20 @@
 # rosbag2_storage_mcap
-EXPERIMENTAL: rosbag2 storage implementation for MCAP file format
+
+rosbag2 storage implementation for [MCAP](https://github.com/foxglove/mcap) file format
 
 Packages in this repository:
-* `mcap_vendor`: provides the MCAP implementation
-* `rosbag2_storage_mcap`: a rosbag2 storage plugin that uses the MCAP implementation to write bags to MCAP format
+* `rosbag2_storage_mcap`: a rosbag2 storage plugin that uses the C++ MCAP implementation to read and write MCAP files
+
+## Usage
+
+To build rosbag2_storage_mcap, you need [conan](https://conan.io/) installed. On most platforms this can be accomplished with `pip install conan`.
+
+In a shell that has your ROS2 environment sourced:
+
+```bash
+git clone https://github.com/ros-tooling/rosbag2_storage_mcap.git
+cd rosbag2_storage_mcap
+colcon build
+source install/setup.bash
+ros2 bag info -s mcap path/to/your_recording.mcap
+```
