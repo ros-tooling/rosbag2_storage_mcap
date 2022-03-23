@@ -2,8 +2,8 @@
 Changelog for package rosbag2_storage_mcap
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.0 (2022-03-24)
+------------------
 * [1.0.0] Use Summary section for get_metadata() and seek(), implement remaining methods (`#17 <https://github.com/wep21/rosbag2_storage_mcap/issues/17>`_)
 * feat: add play impl (`#16 <https://github.com/wep21/rosbag2_storage_mcap/issues/16>`_)
 * chore: refine package.xml (`#15 <https://github.com/wep21/rosbag2_storage_mcap/issues/15>`_)
