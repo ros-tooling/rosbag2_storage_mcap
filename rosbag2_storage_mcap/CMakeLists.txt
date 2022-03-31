@@ -29,7 +29,6 @@ if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
   # Install conan
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
   execute_process(COMMAND ${Python3_EXECUTABLE} -m pip install conan)
-  set(ENV{PATH} $ENV{HOME}/.local/bin:$ENV{PATH})
   message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
   file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/v0.16.1/conan.cmake"
                 "${CMAKE_BINARY_DIR}/conan.cmake"
@@ -37,6 +36,7 @@ if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
                 TLS_VERIFY ON)
 endif()
 
+set(ENV{PATH} $ENV{HOME}/.local/bin:$ENV{PATH})
 include(${CMAKE_BINARY_DIR}/conan.cmake)
 
 include(FetchContent)
