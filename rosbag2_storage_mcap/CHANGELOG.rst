@@ -2,8 +2,8 @@
 Changelog for package rosbag2_storage_mcap
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.1 (2022-03-31)
+------------------
 * fix: remove pip package dependency from package.xml (`#20 <https://github.com/ros-tooling/rosbag2_storage_mcap/issues/20>`_)
   * fix: remove pip package dependency from package.xml
 * Contributors: Daisuke Nishimatsu
