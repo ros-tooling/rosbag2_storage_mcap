@@ -2,6 +2,12 @@
 Changelog for package rosbag2_storage_mcap
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix: remove pip package dependency from package.xml (`#20 <https://github.com/ros-tooling/rosbag2_storage_mcap/issues/20>`_)
+  * fix: remove pip package dependency from package.xml
+* Contributors: Daisuke Nishimatsu
+
 0.1.0 (2022-03-24)
 ------------------
 * [1.0.0] Use Summary section for get_metadata() and seek(), implement remaining methods (`#17 <https://github.com/wep21/rosbag2_storage_mcap/issues/17>`_)
