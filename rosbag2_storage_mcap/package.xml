@@ -8,7 +8,7 @@
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <buildtool_depend>python3-conan-pip</buildtool_depend>
+  <buildtool_depend>python3-pip</buildtool_depend>
 
   <depend>pluginlib</depend>
   <depend>rcutils</depend>
