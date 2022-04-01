@@ -4,11 +4,7 @@ Changelog for package rosbag2_storage_mcap
 
 0.1.1 (2022-04-01)
 ------------------
-* fix: always exec pip install (`#24 <https://github.com/wep21/rosbag2_storage_mcap/issues/24>`_)
-* fix: always add .local/bin into PATH (`#23 <https://github.com/wep21/rosbag2_storage_mcap/issues/23>`_)
-* fix: add .local/bin into env path (`#22 <https://github.com/wep21/rosbag2_storage_mcap/issues/22>`_)
-* fix: remove pip package dependency from package.xml (`#20 <https://github.com/wep21/rosbag2_storage_mcap/issues/20>`_)
-  * fix: remove pip package dependency from package.xml
+* CMake build script will now execute pip install conan automatically.
 * Contributors: Daisuke Nishimatsu
 
 0.1.0 (2022-03-24)
