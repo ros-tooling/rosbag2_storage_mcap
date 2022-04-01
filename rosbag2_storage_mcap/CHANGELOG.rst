@@ -2,8 +2,8 @@
 Changelog for package rosbag2_storage_mcap
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.1 (2022-04-01)
+------------------
 * fix: always exec pip install (`#24 <https://github.com/wep21/rosbag2_storage_mcap/issues/24>`_)
 * fix: always add .local/bin into PATH (`#23 <https://github.com/wep21/rosbag2_storage_mcap/issues/23>`_)
 * fix: add .local/bin into env path (`#22 <https://github.com/wep21/rosbag2_storage_mcap/issues/22>`_)
