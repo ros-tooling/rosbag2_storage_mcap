@@ -2,6 +2,11 @@
 Changelog for package rosbag2_storage_mcap
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.1 (2022-04-01)
+------------------
+* CMake build script will now execute pip install conan automatically.
+* Contributors: Daisuke Nishimatsu
+
 0.1.0 (2022-03-24)
 ------------------
 * [1.0.0] Use Summary section for get_metadata() and seek(), implement remaining methods (`#17 <https://github.com/wep21/rosbag2_storage_mcap/issues/17>`_)
