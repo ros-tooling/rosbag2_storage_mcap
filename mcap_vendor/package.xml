@@ -10,7 +10,6 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>lz4_cmake_module</buildtool_depend>
 
-  <depend>libzstd-dev</depend>
   <depend>lz4</depend>
   <depend>zstd_vendor</depend>
 
