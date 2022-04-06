@@ -8,7 +8,7 @@
   <maintainer email="daisuke.nishimatsu@tier4.jp">Daisuke Nishimatsu</maintainer>
 
   <license>Apache License 2.0</license>
-  <license>BSD</license> <!-- license of FindLZ4.cmake from https://github.com/Kitware/VTK.git -->
+  <license file="cmake/Modules/Copyright.txt">BSD</license> <!-- license of FindLZ4.cmake from https://github.com/Kitware/VTK.git -->
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
