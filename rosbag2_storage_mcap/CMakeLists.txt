@@ -74,7 +74,12 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   list(APPEND AMENT_LINT_AUTO_EXCLUDE
     ament_cmake_uncrustify
+    ament_cmake_copyright
   )
+  list(APPEND ament_cmake_copyright_ADDITIONAL_EXCLUDE vendor)
+  list(APPEND ament_cmake_cpplint_ADDITIONAL_EXCLUDE vendor)
+  list(APPEND ament_cmake_cppcheck_ADDITIONAL_EXCLUDE vendor)
+  # ament_copyright(EXCLUDE vendor)
   ament_lint_auto_find_test_dependencies()
 endif()
 
