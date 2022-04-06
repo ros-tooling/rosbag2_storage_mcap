@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(rosbag2_storage_mcap)
+project(rosbag2_storage_mcap LANGUAGES C CXX ASM)
 
 # Set Release build if no build type was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
