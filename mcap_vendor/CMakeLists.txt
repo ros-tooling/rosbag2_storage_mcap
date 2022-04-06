@@ -13,7 +13,6 @@ endif()
 
 ## Dependencies
 find_package(ament_cmake REQUIRED)
-find_package(fmt REQUIRED)
 find_package(lz4_cmake_module REQUIRED)
 find_package(LZ4 REQUIRED)
 find_package(zstd_vendor REQUIRED)
@@ -25,13 +24,12 @@ macro(build_mcap_vendor)
   include(FetchContent)
   fetchcontent_declare(mcap
     GIT_REPOSITORY https://github.com/foxglove/mcap.git
-    GIT_TAG 33bddb9c3009478d09fa516e6293b962932967da # releases/cpp/v0.1.0
+    GIT_TAG 743b1f8e6ac072db0649fe26ddb5d04534716fd3 # releases/cpp/v0.1.1
   )
   fetchcontent_makeavailable(mcap)
 
   add_library(mcap INTERFACE)
   target_link_libraries(mcap INTERFACE
-    fmt::fmt
     LZ4::LZ4
     zstd::zstd
   )
@@ -62,7 +60,6 @@ endmacro()
 ## Call vendor macro
 build_mcap_vendor()
 
-ament_export_dependencies(fmt)
 ament_export_dependencies(lz4_cmake_module)
 ament_export_dependencies(LZ4)
 ament_export_dependencies(zstd_vendor)
