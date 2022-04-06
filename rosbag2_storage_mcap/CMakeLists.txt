@@ -29,6 +29,7 @@ file(GLOB ZSTD_SRCS
   vendor/zstd/lib/common/*.c
   vendor/zstd/lib/compress/*.c
   vendor/zstd/lib/decompress/*.c
+  vendor/zstd/lib/decompress/*.S
 )
 add_library(
   ${PROJECT_NAME} SHARED
