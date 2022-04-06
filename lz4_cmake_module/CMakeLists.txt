@@ -3,15 +3,6 @@ project(lz4_cmake_module)
 
 find_package(ament_cmake REQUIRED)
 
-if(NOT EXISTS "${CMAKE_SOURCE_DIR}/cmake/Modules/FindLZ4.cmake")
-  file(DOWNLOAD
-    https://raw.githubusercontent.com/Kitware/VTK/v9.1.0/CMake/FindLZ4.cmake
-    ${CMAKE_SOURCE_DIR}/cmake/Modules/FindLZ4.cmake
-    SHOW_PROGRESS
-    TIMEOUT 60s
-  )
-endif()
-
 if(BUILD_TESTING)
   find_package(ament_cmake_lint_cmake REQUIRED)
   find_package(ament_cmake_copyright REQUIRED)
