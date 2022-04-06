@@ -25,70 +25,27 @@ find_package(ros_environment REQUIRED)
 find_package(rosbag2_storage REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 
-# Install conan
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
-execute_process(COMMAND ${Python3_EXECUTABLE} -m pip install conan)
-set(ENV{PATH} $ENV{HOME}/.local/bin:$ENV{PATH})
-
-if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
-  message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-  file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/v0.16.1/conan.cmake"
-                "${CMAKE_BINARY_DIR}/conan.cmake"
-                EXPECTED_HASH SHA256=396e16d0f5eabdc6a14afddbcfff62a54a7ee75c6da23f32f7a31bc85db23484
-                TLS_VERIFY ON)
-endif()
-
-include(${CMAKE_BINARY_DIR}/conan.cmake)
-
-include(FetchContent)
-fetchcontent_declare(mcap
-  GIT_REPOSITORY https://github.com/foxglove/mcap.git
-  GIT_TAG 0851e316cf973c26a64773c56540efbbaf06725a
+file(GLOB ZSTD_SRCS
+  vendor/zstd/lib/common/*.c
+  vendor/zstd/lib/compress/*.c
+  vendor/zstd/lib/decompress/*.c
 )
-fetchcontent_makeavailable(mcap)
-
-set(MCAP_ROOT ${CMAKE_CURRENT_BINARY_DIR}/_deps/mcap-src/cpp)
-set(MCAP_INCLUDE_DIRS ${MCAP_ROOT}/mcap/include)
-
-conan_cmake_autodetect(settings)
-
-conan_cmake_install(
-  PATH_OR_REFERENCE ${MCAP_ROOT}/mcap
-  INSTALL_FOLDER ${MCAP_ROOT}/mcap/build/Release
-  BUILD missing
-  SETTINGS compiler=gcc
-  SETTINGS compiler.version=11
-  SETTINGS compiler.libcxx=libstdc++
-  SETTINGS ${settings}
-)
-
-include(${MCAP_ROOT}/mcap/build/Release/conanbuildinfo.cmake)
-conan_basic_setup()
-
 add_library(
   ${PROJECT_NAME} SHARED
   src/mcap_storage.cpp
   src/message_definition_cache.cpp
+  ${ZSTD_SRCS}
+  vendor/lz4/lib/lz4.c
 )
 target_compile_features(${PROJECT_NAME} PUBLIC c_std_99 cxx_std_17)
 target_include_directories(${PROJECT_NAME}
-  SYSTEM PUBLIC
-    $<BUILD_INTERFACE:${MCAP_INCLUDE_DIRS}>
-    $<INSTALL_INTERFACE:include>
-)
-
-target_link_libraries(${PROJECT_NAME}
-  ${CONAN_LIBS}
+  SYSTEM PRIVATE
+    ${PROJECT_SOURCE_DIR}/vendor/mcap/cpp/mcap/include
+    ${PROJECT_SOURCE_DIR}/vendor/lz4/lib
+    ${PROJECT_SOURCE_DIR}/vendor/zstd/lib
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE ROS_DISTRO=${ROS_DISTRO})
-
-install(
-  DIRECTORY
-    ${MCAP_INCLUDE_DIRS}/mcap
-  DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/include
-)
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
