@@ -3,7 +3,7 @@
 	url = https://github.com/foxglove/mcap.git
 [submodule "vendor/zstd"]
 	path = rosbag2_storage_mcap/vendor/zstd
-	url = git@github.com:facebook/zstd.git
+	url = https://github.com/facebook/zstd.git
 [submodule "vendor/lz4"]
 	path = rosbag2_storage_mcap/vendor/lz4
-	url = git@github.com:lz4/lz4.git
+	url = https://github.com/lz4/lz4.git
