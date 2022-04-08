@@ -18,7 +18,6 @@
 #include "rosbag2_storage/ros_helper.hpp"
 #include "rosbag2_storage/storage_interfaces/read_write_interface.hpp"
 
-#define MCAP_IMPLEMENTATION
 #include <mcap/mcap.hpp>
 
 #include <filesystem>
