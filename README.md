@@ -10,7 +10,7 @@ Packages in this repository:
 To build rosbag2_storage_mcap from source, in a shell that has your ROS2 environment sourced:
 
 ```bash
-git clone --recursive https://github.com/ros-tooling/rosbag2_storage_mcap.git
+git clone https://github.com/ros-tooling/rosbag2_storage_mcap.git
 cd rosbag2_storage_mcap
 colcon build
 source install/setup.bash
