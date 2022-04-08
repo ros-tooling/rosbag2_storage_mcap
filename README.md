@@ -7,9 +7,7 @@ Packages in this repository:
 
 ## Usage
 
-To build rosbag2_storage_mcap, you need [conan](https://conan.io/) installed. On most platforms this can be accomplished with `pip install conan`.
-
-In a shell that has your ROS2 environment sourced:
+To build rosbag2_storage_mcap from source, in a shell that has your ROS2 environment sourced:
 
 ```bash
 git clone https://github.com/ros-tooling/rosbag2_storage_mcap.git
