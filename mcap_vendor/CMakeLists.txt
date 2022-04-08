@@ -52,8 +52,8 @@ macro(build_mcap_vendor)
   set(_mcap_include_dir ${mcap_SOURCE_DIR}/cpp/mcap/include)
 
   target_include_directories(mcap SYSTEM PRIVATE
-    ${_lz4_SOURCE_DIR/lib}
-    ${_zstd_SOURCE_DIR/lib}
+    ${lz4_SOURCE_DIR/lib}
+    ${zstd_SOURCE_DIR/lib}
   )
   target_include_directories(mcap SYSTEM PUBLIC
     "$<BUILD_INTERFACE:${_mcap_include_dir}>"
