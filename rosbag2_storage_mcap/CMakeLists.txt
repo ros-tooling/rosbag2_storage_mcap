@@ -25,25 +25,47 @@ find_package(ros_environment REQUIRED)
 find_package(rosbag2_storage REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 
-file(GLOB ZSTD_SRCS
-  vendor/zstd/lib/common/*.c
-  vendor/zstd/lib/compress/*.c
-  vendor/zstd/lib/decompress/*.c
-  vendor/zstd/lib/decompress/*.S
+include(FetchContent)
+fetchcontent_declare(mcap
+  GIT_REPOSITORY https://github.com/foxglove/mcap.git
+  GIT_TAG releases/cpp/v0.1.1
+  GIT_SHALLOW 1
+)
+fetchcontent_makeavailable(mcap)
+
+fetchcontent_declare(lz4
+  GIT_REPOSITORY https://github.com/lz4/lz4.git
+  GIT_TAG v1.9.3
+  GIT_SHALLOW 1
+)
+fetchcontent_makeavailable(lz4)
+
+fetchcontent_declare(zstd
+  GIT_REPOSITORY https://github.com/facebook/zstd.git
+  GIT_TAG v1.5.2
+  GIT_SHALLOW 1
+)
+fetchcontent_makeavailable(zstd)
+
+file(GLOB _zstd_sources
+  ${zstd_SOURCE_DIR}/lib/common/*.c
+  ${zstd_SOURCE_DIR}/lib/compress/*.c
+  ${zstd_SOURCE_DIR}/lib/decompress/*.c
+  ${zstd_SOURCE_DIR}/lib/decompress/*.S
 )
 add_library(
   ${PROJECT_NAME} SHARED
   src/mcap_storage.cpp
   src/message_definition_cache.cpp
-  ${ZSTD_SRCS}
-  vendor/lz4/lib/lz4.c
+  ${_zstd_sources}
+  ${lz4_SOURCE_DIR}/lib/lz4.c
 )
 target_compile_features(${PROJECT_NAME} PUBLIC c_std_99 cxx_std_17)
 target_include_directories(${PROJECT_NAME}
   SYSTEM PRIVATE
-    ${PROJECT_SOURCE_DIR}/vendor/mcap/cpp/mcap/include
-    ${PROJECT_SOURCE_DIR}/vendor/lz4/lib
-    ${PROJECT_SOURCE_DIR}/vendor/zstd/lib
+    ${mcap_SOURCE_DIR}/cpp/mcap/include
+    ${lz4_SOURCE_DIR}/lib
+    ${zstd_SOURCE_DIR}/lib
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE ROS_DISTRO=${ROS_DISTRO})
@@ -70,27 +92,12 @@ install(
 )
 
 if(BUILD_TESTING)
-  file(GLOB _all_non_vendor_files *)
-  list(REMOVE_ITEM _all_non_vendor_files ${PROJECT_SOURCE_DIR}/vendor)
-
-  find_package(ament_cmake_copyright REQUIRED)
-  ament_copyright(${_all_non_vendor_files})
-
   set(ament_cmake_clang_format_CONFIG_FILE .clang-format)
-  find_package(ament_cmake_clang_format REQUIRED)
-  ament_clang_format(src)
-
-  find_package(ament_cmake_cppcheck REQUIRED)
-  ament_cppcheck(src)
-
-  find_package(ament_cmake_cpplint REQUIRED)
-  ament_cpplint(src)
-
-  find_package(ament_cmake_lint_cmake REQUIRED)
-  ament_lint_cmake(CMakeLists.txt)
-
-  find_package(ament_cmake_xmllint REQUIRED)
-  ament_xmllint()
+  find_package(ament_lint_auto REQUIRED)
+  list(APPEND AMENT_LINT_AUTO_EXCLUDE
+    ament_cmake_uncrustify
+  )
+  ament_lint_auto_find_test_dependencies()
 endif()
 
 ament_export_libraries(${PROJECT_NAME})
