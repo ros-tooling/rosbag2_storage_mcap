@@ -70,17 +70,27 @@ install(
 )
 
 if(BUILD_TESTING)
+  file(GLOB _all_non_vendor_files *)
+  list(REMOVE_ITEM _all_non_vendor_files ${PROJECT_SOURCE_DIR}/vendor)
+
+  find_package(ament_cmake_copyright REQUIRED)
+  ament_copyright(${_all_non_vendor_files})
+
   set(ament_cmake_clang_format_CONFIG_FILE .clang-format)
-  find_package(ament_lint_auto REQUIRED)
-  list(APPEND AMENT_LINT_AUTO_EXCLUDE
-    ament_cmake_uncrustify
-    ament_cmake_copyright
-  )
-  list(APPEND ament_cmake_copyright_ADDITIONAL_EXCLUDE vendor)
-  list(APPEND ament_cmake_cpplint_ADDITIONAL_EXCLUDE vendor)
-  list(APPEND ament_cmake_cppcheck_ADDITIONAL_EXCLUDE vendor)
-  # ament_copyright(EXCLUDE vendor)
-  ament_lint_auto_find_test_dependencies()
+  find_package(ament_cmake_clang_format REQUIRED)
+  ament_clang_format(src)
+
+  find_package(ament_cmake_cppcheck REQUIRED)
+  ament_cppcheck(src)
+
+  find_package(ament_cmake_cpplint REQUIRED)
+  ament_cpplint(src)
+
+  find_package(ament_cmake_lint_cmake REQUIRED)
+  ament_lint_cmake(CMakeLists.txt)
+
+  find_package(ament_cmake_xmllint REQUIRED)
+  ament_xmllint()
 endif()
 
 ament_export_libraries(${PROJECT_NAME})
