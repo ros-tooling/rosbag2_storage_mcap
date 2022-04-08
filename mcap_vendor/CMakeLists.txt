@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(mcap_vendor)
+project(mcap_vendor LANGUAGES C CXX ASM)
 
 ## Compile options
 if(NOT CMAKE_CXX_STANDARD)
