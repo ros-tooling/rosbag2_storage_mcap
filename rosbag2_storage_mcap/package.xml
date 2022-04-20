@@ -4,7 +4,7 @@
   <name>rosbag2_storage_mcap</name>
   <version>0.1.3</version>
   <description>rosbag2 storage plugin using the MCAP file format</description>
-  <maintainer email="john@foxglove.dev">John Hurliman</maintainer>
+  <maintainer email="ros-tooling@foxglove.dev">Foxglove</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
