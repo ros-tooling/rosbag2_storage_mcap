@@ -20,6 +20,9 @@
 
 #include <fstream>
 #include <regex>
+#include <set>
+#include <string>
+#include <unordered_set>
 #include <utility>
 
 namespace rosbag2_storage_mcap::internal {

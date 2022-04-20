@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#ifndef MESSAGE_DEFINITION_CACHE_HPP_
+#define MESSAGE_DEFINITION_CACHE_HPP_
 
 #include <set>
 #include <string>
@@ -47,3 +48,5 @@ private:
 };
 
 }  // namespace rosbag2_storage_mcap::internal
+
+#endif  // MESSAGE_DEFINITION_CACHE_HPP_
