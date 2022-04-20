@@ -20,22 +20,19 @@ macro(build_mcap_vendor)
   include(FetchContent)
   fetchcontent_declare(mcap
     GIT_REPOSITORY https://github.com/foxglove/mcap.git
-    GIT_TAG releases/cpp/v0.1.1
-    GIT_SHALLOW 1
+    GIT_TAG 743b1f8e6ac072db0649fe26ddb5d04534716fd3 # releases/cpp/v0.1.1
   )
   fetchcontent_makeavailable(mcap)
 
   fetchcontent_declare(lz4
     GIT_REPOSITORY https://github.com/lz4/lz4.git
-    GIT_TAG v1.9.3
-    GIT_SHALLOW 1
+    GIT_TAG d44371841a2f1728a3f36839fd4b7e872d0927d3 # v1.9.3
   )
   fetchcontent_makeavailable(lz4)
 
   fetchcontent_declare(zstd
     GIT_REPOSITORY https://github.com/facebook/zstd.git
-    GIT_TAG v1.5.2
-    GIT_SHALLOW 1
+    GIT_TAG e47e674cd09583ff0503f0f6defd6d23d8b718d3 # v1.5.2
   )
   fetchcontent_makeavailable(zstd)
 
