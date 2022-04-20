@@ -63,10 +63,10 @@ public:
   /** ReadOnlyInterface **/
   void set_filter(const rosbag2_storage::StorageFilter& storage_filter) override;
   void reset_filter() override;
-#if ROS_DISTRO == galactic
-  void seek(const rcutils_time_point_value_t& timestamp);
-#else
+#ifdef ROSBAG2_STORAGE_MCAP_OVERRIDE_SEEK_METHOD
   void seek(const rcutils_time_point_value_t& timestamp) override;
+#else
+  void seek(const rcutils_time_point_value_t& timestamp);
 #endif
 
   /** ReadWriteInterface **/

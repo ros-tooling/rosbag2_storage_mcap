@@ -68,13 +68,6 @@ macro(build_mcap_vendor)
   )
 
   install(TARGETS mcap EXPORT export_mcap)
-
-  install(
-    EXPORT export_mcap
-    FILE mcap-config.cmake
-    DESTINATION share/cmake/mcap/
-    NAMESPACE "mcap_vendor::"
-    EXPORT_LINK_INTERFACE_LIBRARIES)
 endmacro()
 
 ## Call vendor macro

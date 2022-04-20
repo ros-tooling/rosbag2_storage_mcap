@@ -23,7 +23,6 @@ find_package(ament_index_cpp REQUIRED)
 find_package(mcap_vendor REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rcutils REQUIRED)
-find_package(ros_environment REQUIRED)
 find_package(rosbag2_storage REQUIRED)
 
 add_library(
@@ -35,20 +34,20 @@ target_compile_features(${PROJECT_NAME} PUBLIC c_std_99 cxx_std_17)
 
 target_link_libraries(${PROJECT_NAME}
   mcap_vendor::mcap
+  pluginlib::pluginlib
+  rcutils::rcutils
+  rosbag2_storage::rosbag2_storage
 )
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE ROS_DISTRO=${ROS_DISTRO})
+if(${rosbag2_storage_VERSION} VERSION_GREATER_EQUAL 0.10.0)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE
+    ROSBAG2_STORAGE_MCAP_OVERRIDE_SEEK_METHOD
+  )
+endif()
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(${PROJECT_NAME} PRIVATE "ROSBAG2_STORAGE_MCAP_BUILDING_LIBRARY")
-
-ament_target_dependencies(${PROJECT_NAME}
-  pluginlib
-  rcutils
-  ros_environment
-  rosbag2_storage
-)
 
 pluginlib_export_plugin_description_file(rosbag2_storage plugin_description.xml)
 
