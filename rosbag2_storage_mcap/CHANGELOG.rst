@@ -2,6 +2,11 @@
 Changelog for package rosbag2_storage_mcap
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Added mcap_vendor package. Updated CMakeLists.txt to fetch dependencies with FetchContent rather than Conan.
+* Contributors: Jacob Bandes-Storch
+
 0.1.1 (2022-04-01)
 ------------------
 * CMake build script will now execute pip install conan automatically.
