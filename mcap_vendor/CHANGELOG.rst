@@ -2,8 +2,8 @@
 Changelog for package mcap_vendor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.4 (2022-04-21)
+------------------
 * fix: minor issues (`#31 <https://github.com/wep21/rosbag2_storage_mcap/issues/31>`_)
   * remove unnecessary block
   * use target_link_libraries instead of ament_target_dependencies
