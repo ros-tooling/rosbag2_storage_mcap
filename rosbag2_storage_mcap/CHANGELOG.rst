@@ -2,6 +2,16 @@
 Changelog for package rosbag2_storage_mcap
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix: minor issues (`#31 <https://github.com/wep21/rosbag2_storage_mcap/issues/31>`_)
+  * remove unnecessary block
+  * use target_link_libraries instead of ament_target_dependencies
+  * remove ros environment
+  * add prefix to compile definition
+* Update email address for Foxglove maintainers (`#32 <https://github.com/wep21/rosbag2_storage_mcap/issues/32>`_)
+* Contributors: Daisuke Nishimatsu, Jacob Bandes-Storch
+
 0.1.3 (2022-04-20)
 ------------------
 
