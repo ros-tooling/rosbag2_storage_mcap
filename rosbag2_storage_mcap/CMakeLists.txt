@@ -41,7 +41,7 @@ target_link_libraries(${PROJECT_NAME}
 
 if(${rosbag2_storage_VERSION} VERSION_GREATER_EQUAL 0.10.0)
   target_compile_definitions(${PROJECT_NAME} PRIVATE
-    OVERRIDE_SEEK_METHOD
+    ROSBAG2_STORAGE_MCAP_OVERRIDE_SEEK_METHOD
   )
 endif()
 
