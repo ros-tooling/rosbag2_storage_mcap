@@ -24,7 +24,7 @@ jobs:
 
     runs-on: ubuntu-latest
     container:
-      image: rostooling/setup-ros-docker:ubuntu-${{ matrix.os }}-latest
+      image: rostooling/setup-ros-docker:ubuntu-${{ matrix.ubuntu }}-latest
 
     name: ROS 2 ${{ matrix.ros }}
     steps:
