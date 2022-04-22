@@ -11,16 +11,23 @@ on:
 
 jobs:
   build_and_test:
+    strategy:
+      fail-fast: false
+      matrix:
+        ros: [foxy, galactic, rolling]
+
     runs-on: ubuntu-latest
     container:
       image: rostooling/setup-ros-docker:ubuntu-jammy-latest
+
+    name: ROS 2 ${{ matrix.ros }}
     steps:
     - name: Build and run tests
       id: action-ros-ci
       uses: ros-tooling/action-ros-ci@v0.2
       with:
         package-name: rosbag2_storage_mcap
-        target-ros2-distro: rolling
+        target-ros2-distro: ${{ matrix.ros }}
     - uses: actions/upload-artifact@v1
       with:
         name: colcon-logs
