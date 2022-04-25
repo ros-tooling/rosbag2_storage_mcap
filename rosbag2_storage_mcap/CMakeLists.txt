@@ -44,6 +44,11 @@ if(${rosbag2_storage_VERSION} VERSION_GREATER_EQUAL 0.10.0)
     ROSBAG2_STORAGE_MCAP_OVERRIDE_SEEK_METHOD
   )
 endif()
+if(${rosbag2_storage_VERSION} VERSION_GREATER_EQUAL 0.4.0)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE
+    ROSBAG2_STORAGE_MCAP_HAS_STORAGE_OPTIONS
+  )
+endif()
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.

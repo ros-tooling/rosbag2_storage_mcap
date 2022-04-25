@@ -45,9 +45,17 @@ public:
   virtual ~MCAPStorage();
 
   /** BaseIOInterface **/
+#ifdef ROSBAG2_STORAGE_MCAP_HAS_STORAGE_OPTIONS
   void open(const rosbag2_storage::StorageOptions& storage_options,
             rosbag2_storage::storage_interfaces::IOFlag io_flag =
               rosbag2_storage::storage_interfaces::IOFlag::READ_WRITE) override;
+  void open(const std::string& uri, rosbag2_storage::storage_interfaces::IOFlag io_flag =
+                                      rosbag2_storage::storage_interfaces::IOFlag::READ_WRITE);
+#else
+  void open(const std::string& uri,
+            rosbag2_storage::storage_interfaces::IOFlag io_flag =
+              rosbag2_storage::storage_interfaces::IOFlag::READ_WRITE) override;
+#endif
 
   /** BaseInfoInterface **/
   rosbag2_storage::BagMetadata get_metadata() override;
@@ -125,11 +133,18 @@ MCAPStorage::~MCAPStorage() {
 }
 
 /** BaseIOInterface **/
+#ifdef ROSBAG2_STORAGE_MCAP_HAS_STORAGE_OPTIONS
 void MCAPStorage::open(const rosbag2_storage::StorageOptions& storage_options,
+                       rosbag2_storage::storage_interfaces::IOFlag io_flag) {
+  open(storage_options.uri, io_flag);
+}
+#endif
+
+void MCAPStorage::open(const std::string& uri,
                        rosbag2_storage::storage_interfaces::IOFlag io_flag) {
   switch (io_flag) {
     case rosbag2_storage::storage_interfaces::IOFlag::READ_ONLY: {
-      relative_path_ = storage_options.uri;
+      relative_path_ = uri;
       input_ = std::make_unique<std::ifstream>(relative_path_, std::ios::binary);
       data_source_ = std::make_unique<mcap::FileStreamReader>(*input_);
       mcap_reader_ = std::make_unique<mcap::McapReader>();
@@ -145,7 +160,7 @@ void MCAPStorage::open(const rosbag2_storage::StorageOptions& storage_options,
     case rosbag2_storage::storage_interfaces::IOFlag::APPEND: {
       // APPEND does not seem to be used; treat it the same as READ_WRITE
       io_flag = rosbag2_storage::storage_interfaces::IOFlag::READ_WRITE;
-      relative_path_ = storage_options.uri + FILE_EXTENSION;
+      relative_path_ = uri + FILE_EXTENSION;
 
       mcap_writer_ = std::make_unique<mcap::McapWriter>();
       mcap::McapWriterOptions options{"ros2"};
