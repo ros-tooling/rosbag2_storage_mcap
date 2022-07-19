@@ -2,6 +2,12 @@
 
 This package provides a [storage plugin](https://github.com/ros2/rosbag2#storage-format-plugin-architecture) for rosbag2 which extends it with support for the [MCAP](https://mcap.dev) file format.
 
+[![ROS Foxy version](https://img.shields.io/ros/v/foxy/rosbag2_storage_mcap)](https://index.ros.org/p/rosbag2_storage_mcap/github-ros-tooling-rosbag2_storage_mcap/#foxy)  
+[![ROS Galactic version](https://img.shields.io/ros/v/galactic/rosbag2_storage_mcap)](https://index.ros.org/p/rosbag2_storage_mcap/github-ros-tooling-rosbag2_storage_mcap/#galactic)  
+[![ROS Humble version](https://img.shields.io/ros/v/humble/rosbag2_storage_mcap)](https://index.ros.org/p/rosbag2_storage_mcap/github-ros-tooling-rosbag2_storage_mcap/#humble)  
+[![ROS Rolling version](https://img.shields.io/ros/v/rolling/rosbag2_storage_mcap)](https://index.ros.org/p/rosbag2_storage_mcap/github-ros-tooling-rosbag2_storage_mcap/#rolling)
+
+
 ## Installation
 
 rosbag2_storage_mcap is available as part of the [current ROS 2 distributions](https://docs.ros.org/en/rolling/Releases.html). On Ubuntu, after following the [ROS 2 installation instructions](https://docs.ros.org/en/humble/Installation.html), you can use:
