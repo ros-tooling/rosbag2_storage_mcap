@@ -20,7 +20,7 @@ macro(build_mcap_vendor)
   include(FetchContent)
   fetchcontent_declare(mcap
     GIT_REPOSITORY https://github.com/foxglove/mcap.git
-    GIT_TAG 743b1f8e6ac072db0649fe26ddb5d04534716fd3 # releases/cpp/v0.1.1
+    GIT_TAG a06ec974f21b47f9f8425f7e70a599e3aa116d95 # releases/cpp/v0.1.2
   )
   fetchcontent_makeavailable(mcap)
 
