@@ -58,5 +58,5 @@ TEST(TestMCAPStorage, can_write_and_read_basic_mcap_file) {
     auto msg = reader.read_next<std_msgs::msg::String>();
     EXPECT_EQ(msg.data, message_data);
   }
-  // rcpputils::fs::remove_all(tmp);
+  rcpputils::fs::remove_all(tmp);
 }
