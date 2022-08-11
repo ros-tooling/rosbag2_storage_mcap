@@ -42,10 +42,16 @@ macro(build_mcap_vendor)
     ${zstd_SOURCE_DIR}/lib/decompress/*.c
     ${zstd_SOURCE_DIR}/lib/decompress/*.S
   )
+
+  file(GLOB _lz4_srcs
+    ${lz4_SOURCE_DIR}/lib/*.c)
+
   add_library(
     mcap SHARED
     src/main.cpp
     ${_zstd_srcs}
+    # Commented out to show failing action, will enable in next commit
+    # ${_lz4_srcs}
     ${lz4_SOURCE_DIR}/lib/lz4.c
   )
 
