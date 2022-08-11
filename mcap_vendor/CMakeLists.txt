@@ -50,9 +50,7 @@ macro(build_mcap_vendor)
     mcap SHARED
     src/main.cpp
     ${_zstd_srcs}
-    # Commented out to show failing action, will enable in next commit
-    # ${_lz4_srcs}
-    ${lz4_SOURCE_DIR}/lib/lz4.c
+    ${_lz4_srcs}
   )
 
   set(_mcap_include_dir ${mcap_SOURCE_DIR}/cpp/mcap/include)
