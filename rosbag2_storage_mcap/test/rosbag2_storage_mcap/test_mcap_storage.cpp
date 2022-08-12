@@ -22,25 +22,24 @@ using StorageOptions = rosbag2_storage::StorageOptions;
 #include "rosbag2_cpp/storage_options.hpp"
 using StorageOptions = rosbag2_cpp::StorageOptions;
 #endif
+#include "rosbag2_test_common/temporary_directory_fixture.hpp"
 #include "std_msgs/msg/string.hpp"
 
 #include <gmock/gmock.h>
 
 #include <string>
 
-using namespace ::testing;      // NOLINT
-using namespace rcpputils::fs;  // NOLINT
+using namespace ::testing;  // NOLINT
+using TemporaryDirectoryFixture = rosbag2_test_common::TemporaryDirectoryFixture;
 
-TEST(TestMCAPStorage, can_write_and_read_basic_mcap_file) {
-  const path tmp = create_temp_directory("test_mcap_bag", current_path());
-  const path uri = tmp / "bag";
-  const path expected_bag = uri / "bag_0.mcap";
+TEST_F(TemporaryDirectoryFixture, can_write_and_read_basic_mcap_file) {
+  const auto uri = rcpputils::fs::path(temporary_dir_path_) / "bag";
+  const auto expected_bag = uri / "bag_0.mcap";
   const int64_t timestamp_nanos = 100;  // arbitrary value
   rclcpp::Time time_stamp{timestamp_nanos};
   const std::string topic_name = "test_topic";
   const std::string message_data = "Test Message 1";
   const std::string storage_id = "mcap";
-
   {
     StorageOptions options;
     options.uri = uri.string();
@@ -66,5 +65,4 @@ TEST(TestMCAPStorage, can_write_and_read_basic_mcap_file) {
     auto msg = reader.read_next<std_msgs::msg::String>();
     EXPECT_EQ(msg.data, message_data);
   }
-  rcpputils::fs::remove_all(tmp);
 }

@@ -66,6 +66,7 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   find_package(rcpputils REQUIRED)
   find_package(rosbag2_cpp REQUIRED)
+  find_package(rosbag2_test_common REQUIRED)
   find_package(std_msgs REQUIRED)
 
   set(ament_cmake_clang_format_CONFIG_FILE .clang-format)
@@ -74,7 +75,7 @@ if(BUILD_TESTING)
 
   ament_add_gmock(test_mcap_storage test/rosbag2_storage_mcap/test_mcap_storage.cpp)
   target_link_libraries(test_mcap_storage ${PROJECT_NAME})
-  ament_target_dependencies(test_mcap_storage rosbag2_storage rosbag2_cpp std_msgs)
+  ament_target_dependencies(test_mcap_storage rosbag2_storage rosbag2_cpp rosbag2_test_common std_msgs)
   # share compile defs from main library
   get_target_property(test_mcap_storage_definitions ${PROJECT_NAME} COMPILE_DEFINITIONS)
   target_compile_definitions(test_mcap_storage PRIVATE ${test_mcap_storage_definitions})
