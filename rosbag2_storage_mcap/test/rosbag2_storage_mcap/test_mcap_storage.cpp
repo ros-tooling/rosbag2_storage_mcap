@@ -15,7 +15,13 @@
 #include "rcpputils/filesystem_helper.hpp"
 #include "rosbag2_cpp/reader.hpp"
 #include "rosbag2_cpp/writer.hpp"
+#ifdef ROSBAG2_STORAGE_MCAP_HAS_STORAGE_OPTIONS
 #include "rosbag2_storage/storage_options.hpp"
+using StorageOptions = rosbag2_storage::StorageOptions;
+#else
+#include "rosbag2_cpp/storage_options.hpp"
+using StorageOptions = rosbag2_cpp::StorageOptions;
+#endif
 #include "std_msgs/msg/string.hpp"
 
 #include <gmock/gmock.h>
@@ -36,7 +42,7 @@ TEST(TestMCAPStorage, can_write_and_read_basic_mcap_file) {
   const std::string storage_id = "mcap";
 
   {
-    rosbag2_storage::StorageOptions options;
+    StorageOptions options;
     options.uri = uri.string();
     options.storage_id = storage_id;
 
@@ -50,7 +56,7 @@ TEST(TestMCAPStorage, can_write_and_read_basic_mcap_file) {
     EXPECT_TRUE(expected_bag.is_regular_file());
   }
   {
-    rosbag2_storage::StorageOptions options;
+    StorageOptions options;
     options.uri = expected_bag.string();
     options.storage_id = storage_id;
 
