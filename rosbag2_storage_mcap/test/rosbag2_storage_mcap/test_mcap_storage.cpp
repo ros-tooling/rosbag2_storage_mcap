@@ -20,6 +20,8 @@
 
 #include <gmock/gmock.h>
 
+#include <string>
+
 using namespace ::testing;      // NOLINT
 using namespace rcpputils::fs;  // NOLINT
 
