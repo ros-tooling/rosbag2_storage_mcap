@@ -30,11 +30,11 @@ using StorageOptions = rosbag2_cpp::StorageOptions;
 #include <string>
 
 using namespace ::testing;  // NOLINT
-using TemporaryDirectoryFixture = rosbag2_test_common::TemporaryDirectoryFixture;
+using TemporaryDirectoryFixture = rosbag2_test_common::TemporaryDirectoryFixture;t
 
 TEST_F(TemporaryDirectoryFixture, can_write_and_read_basic_mcap_file) {
-  const auto uri = rcpputils::fs::path(temporary_dir_path_) / "bag";
-  const auto expected_bag = uri / "bag_0.mcap";
+  auto uri = rcpputils::fs::path(temporary_dir_path_) / "bag";
+  auto expected_bag = uri / "bag_0.mcap";
   const int64_t timestamp_nanos = 100;  // arbitrary value
   rclcpp::Time time_stamp{timestamp_nanos};
   const std::string topic_name = "test_topic";
