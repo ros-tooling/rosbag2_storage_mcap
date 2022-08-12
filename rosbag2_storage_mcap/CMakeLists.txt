@@ -79,6 +79,10 @@ if(BUILD_TESTING)
   # share compile defs from main library
   get_target_property(test_mcap_storage_definitions ${PROJECT_NAME} COMPILE_DEFINITIONS)
   target_compile_definitions(test_mcap_storage PRIVATE ${test_mcap_storage_definitions})
+  if(${rosbag2_cpp_VERSION} VERSION_GREATER_EQUAL 0.4.0)
+    target_compile_definitions(test_mcap_storage PRIVATE
+      ROSBAG2_STORAGE_MCAP_WRITER_CREATES_DIRECTORY)
+  endif()
 endif()
 
 

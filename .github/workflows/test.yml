@@ -19,6 +19,8 @@ jobs:
             ubuntu: focal
           - ros: galactic
             ubuntu: focal
+          - ros: humble
+            ubuntu: jammy
           - ros: rolling
             ubuntu: jammy
 
