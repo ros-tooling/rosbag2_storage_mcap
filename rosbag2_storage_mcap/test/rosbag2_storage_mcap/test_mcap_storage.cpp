@@ -71,6 +71,10 @@ TEST_F(TemporaryDirectoryFixture, can_write_and_read_basic_mcap_file) {
     auto serialized_msg = std::make_shared<rclcpp::SerializedMessage>();
     serialization.serialize_message(&msg, serialized_msg.get());
 
+    // This is really kludgy, it's due to a mismatch between types in the rclcpp serialization API
+    // and the historical Foxy serialized APIs. Prevents the hacked shared ptr from deleting the
+    // data that `serialized_bag_msg` should reasonably expect to continue existing.
+    // For this example it wouldn't matter, but in case anybody extends this test, it's for safety.
     auto serialized_bag_msg = std::make_shared<rosbag2_storage::SerializedBagMessage>();
     serialized_bag_msg->serialized_data = std::shared_ptr<rcutils_uint8_array_t>(
       const_cast<rcutils_uint8_array_t*>(&serialized_msg->get_rcl_serialized_message()),
