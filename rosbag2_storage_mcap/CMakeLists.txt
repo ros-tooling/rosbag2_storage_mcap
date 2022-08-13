@@ -25,19 +25,16 @@ find_package(pluginlib REQUIRED)
 find_package(rcutils REQUIRED)
 find_package(rosbag2_storage REQUIRED)
 
-add_library(
-  ${PROJECT_NAME} SHARED
+add_library(${PROJECT_NAME} SHARED
   src/mcap_storage.cpp
   src/message_definition_cache.cpp
 )
 target_compile_features(${PROJECT_NAME} PUBLIC c_std_99 cxx_std_17)
-
-target_link_libraries(${PROJECT_NAME}
-  mcap_vendor::mcap
-  pluginlib::pluginlib
-  rcutils::rcutils
-  rosbag2_storage::rosbag2_storage
-)
+ament_target_dependencies(${PROJECT_NAME}
+  mcap_vendor
+  pluginlib
+  rcutils
+  rosbag2_storage)
 
 if(${rosbag2_storage_VERSION} VERSION_GREATER_EQUAL 0.10.0)
   target_compile_definitions(${PROJECT_NAME} PRIVATE
@@ -65,13 +62,29 @@ install(
 )
 
 if(BUILD_TESTING)
-  set(ament_cmake_clang_format_CONFIG_FILE .clang-format)
+  find_package(ament_cmake_gmock REQUIRED)
   find_package(ament_lint_auto REQUIRED)
-  list(APPEND AMENT_LINT_AUTO_EXCLUDE
-    ament_cmake_uncrustify
-  )
+  find_package(rcpputils REQUIRED)
+  find_package(rosbag2_cpp REQUIRED)
+  find_package(rosbag2_test_common REQUIRED)
+  find_package(std_msgs REQUIRED)
+
+  set(ament_cmake_clang_format_CONFIG_FILE .clang-format)
+  list(APPEND AMENT_LINT_AUTO_EXCLUDE ament_cmake_uncrustify)
   ament_lint_auto_find_test_dependencies()
+
+  ament_add_gmock(test_mcap_storage test/rosbag2_storage_mcap/test_mcap_storage.cpp)
+  target_link_libraries(test_mcap_storage ${PROJECT_NAME})
+  ament_target_dependencies(test_mcap_storage rosbag2_storage rosbag2_cpp rosbag2_test_common std_msgs)
+  # share compile defs from main library
+  get_target_property(test_mcap_storage_definitions ${PROJECT_NAME} COMPILE_DEFINITIONS)
+  target_compile_definitions(test_mcap_storage PRIVATE ${test_mcap_storage_definitions})
+  if(${rosbag2_cpp_VERSION} VERSION_GREATER_EQUAL 0.4.0)
+    target_compile_definitions(test_mcap_storage PRIVATE
+      ROSBAG2_STORAGE_MCAP_WRITER_CREATES_DIRECTORY)
+  endif()
 endif()
+
 
 ament_export_libraries(${PROJECT_NAME})
 ament_export_targets(export_${PROJECT_NAME})
