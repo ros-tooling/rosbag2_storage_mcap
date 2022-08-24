@@ -31,14 +31,12 @@
 #include <utility>
 #include <vector>
 
-#define DECLARE_YAML_VALUE_CONVERTER(ENUM_TYPE, ...)                         \
+#define DECLARE_YAML_VALUE_CONVERTER(ENUM_TYPE, ...)                          \
   template <>                                                                 \
-  struct convert<ENUM_TYPE>                                                   \
-  {                                                                           \
-    static Node encode(const ENUM_TYPE & e)                                   \
-    {                                                                         \
+  struct convert<ENUM_TYPE> {                                                 \
+    static Node encode(const ENUM_TYPE& e) {                                  \
       static const std::pair<ENUM_TYPE, std::string> mapping[] = __VA_ARGS__; \
-      for (const auto & m : mapping) {                                        \
+      for (const auto& m : mapping) {                                         \
         if (m.first == e) {                                                   \
           return Node(m.second);                                              \
         }                                                                     \
@@ -46,11 +44,10 @@
       return Node("");                                                        \
     }                                                                         \
                                                                               \
-    static bool decode(const Node & node, ENUM_TYPE & e)                      \
-    {                                                                         \
+    static bool decode(const Node& node, ENUM_TYPE& e) {                      \
       static const std::pair<ENUM_TYPE, std::string> mapping[] = __VA_ARGS__; \
       const auto val = node.as<std::string>();                                \
-      for (const auto & m : mapping) {                                        \
+      for (const auto& m : mapping) {                                         \
         if (m.second == val) {                                                \
           e = m.first;                                                        \
           return true;                                                        \
@@ -60,37 +57,32 @@
     }                                                                         \
   };
 
-
 namespace {
 
 // Simple wrapper with default constructor for use by YAML
 struct McapWriterOptions : mcap::McapWriterOptions {
-  McapWriterOptions() : mcap::McapWriterOptions("") {}
+  McapWriterOptions()
+      : mcap::McapWriterOptions("") {}
 };
 
 }  // namespace
 
 namespace YAML {
 
-DECLARE_YAML_VALUE_CONVERTER(mcap::Compression, {
-  {mcap::Compression::None, "None"},
-  {mcap::Compression::Lz4, "Lz4"},
-  {mcap::Compression::Zstd, "Zstd"}
-});
+DECLARE_YAML_VALUE_CONVERTER(mcap::Compression, {{mcap::Compression::None, "None"},
+                                                 {mcap::Compression::Lz4, "Lz4"},
+                                                 {mcap::Compression::Zstd, "Zstd"}});
 
-DECLARE_YAML_VALUE_CONVERTER(mcap::CompressionLevel, {
-  {mcap::CompressionLevel::Fastest, "Fastest"},
-  {mcap::CompressionLevel::Fast, "Fast"},
-  {mcap::CompressionLevel::Default, "Default"},
-  {mcap::CompressionLevel::Slow, "Slow"},
-  {mcap::CompressionLevel::Slowest, "Slowest"}
-});
+DECLARE_YAML_VALUE_CONVERTER(mcap::CompressionLevel,
+                             {{mcap::CompressionLevel::Fastest, "Fastest"},
+                              {mcap::CompressionLevel::Fast, "Fast"},
+                              {mcap::CompressionLevel::Default, "Default"},
+                              {mcap::CompressionLevel::Slow, "Slow"},
+                              {mcap::CompressionLevel::Slowest, "Slowest"}});
 
-template<>
-struct convert<McapWriterOptions>
-{
-  static bool decode(const Node & node, McapWriterOptions & o)
-  {
+template <>
+struct convert<McapWriterOptions> {
+  static bool decode(const Node& node, McapWriterOptions& o) {
     optional_assign<bool>(node, "noCRC", o.noCRC);
     optional_assign<bool>(node, "noChunking", o.noChunking);
     optional_assign<bool>(node, "noMessageIndex", o.noMessageIndex);
@@ -113,7 +105,6 @@ struct convert<McapWriterOptions>
 };
 
 }  // namespace YAML
-
 
 namespace rosbag2_storage_plugins {
 
@@ -173,10 +164,8 @@ public:
   void remove_topic(const rosbag2_storage::TopicMetadata& topic) override;
 
 private:
-  void open_impl(
-    const std::string & uri,
-    rosbag2_storage::storage_interfaces::IOFlag io_flag,
-    const std::string & storage_config_uri);
+  void open_impl(const std::string& uri, rosbag2_storage::storage_interfaces::IOFlag io_flag,
+                 const std::string& storage_config_uri);
 
   bool read_and_enqueue_message();
   void ensure_summary_read();
@@ -235,11 +224,9 @@ void MCAPStorage::open(const std::string& uri,
   open_impl(uri, io_flag, "");
 }
 
-void MCAPStorage::open_impl(
-  const std::string & uri,
-  rosbag2_storage::storage_interfaces::IOFlag io_flag,
-  const std::string & storage_config_uri)
-{
+void MCAPStorage::open_impl(const std::string& uri,
+                            rosbag2_storage::storage_interfaces::IOFlag io_flag,
+                            const std::string& storage_config_uri) {
   switch (io_flag) {
     case rosbag2_storage::storage_interfaces::IOFlag::READ_ONLY: {
       relative_path_ = uri;
