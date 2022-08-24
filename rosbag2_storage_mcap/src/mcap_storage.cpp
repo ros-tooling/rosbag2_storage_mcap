@@ -62,7 +62,7 @@ namespace {
 // Simple wrapper with default constructor for use by YAML
 struct McapWriterOptions : mcap::McapWriterOptions {
   McapWriterOptions()
-      : mcap::McapWriterOptions("") {}
+      : mcap::McapWriterOptions("ros2") {}
 };
 
 }  // namespace
@@ -82,6 +82,7 @@ DECLARE_YAML_VALUE_CONVERTER(mcap::CompressionLevel,
 
 template <>
 struct convert<McapWriterOptions> {
+  // NOTE: when updating this struct, also update documentation in README.md
   static bool decode(const Node& node, McapWriterOptions& o) {
     optional_assign<bool>(node, "noCRC", o.noCRC);
     optional_assign<bool>(node, "noChunking", o.noChunking);
@@ -91,8 +92,7 @@ struct convert<McapWriterOptions> {
     optional_assign<mcap::Compression>(node, "compression", o.compression);
     optional_assign<mcap::CompressionLevel>(node, "compressionLevel", o.compressionLevel);
     optional_assign<bool>(node, "forceCompression", o.forceCompression);
-    optional_assign<std::string>(node, "profile", o.profile);
-    optional_assign<std::string>(node, "library", o.library);
+    // Intentionally omitting "profile" and "library"
     optional_assign<bool>(node, "noRepeatedSchemas", o.noRepeatedSchemas);
     optional_assign<bool>(node, "noRepeatedChannels", o.noRepeatedChannels);
     optional_assign<bool>(node, "noAttachmentIndex", o.noAttachmentIndex);
@@ -253,7 +253,6 @@ void MCAPStorage::open_impl(const std::string& uri,
         YAML::Node yaml_node = YAML::LoadFile(storage_config_uri);
         options = yaml_node.as<McapWriterOptions>();
       }
-      options.profile = "ros2";
 
       auto status = mcap_writer_->open(relative_path_, options);
       if (!status.ok()) {
