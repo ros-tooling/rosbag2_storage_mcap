@@ -17,7 +17,20 @@
 #include "rosbag2_storage/metadata_io.hpp"
 #include "rosbag2_storage/ros_helper.hpp"
 #include "rosbag2_storage/storage_interfaces/read_write_interface.hpp"
-#include "rosbag2_storage/yaml.hpp"
+
+// COMPATIBILITY(foxy, galactic) - this block is available in rosbag2_storage/yaml.hpp in H
+#ifdef _WIN32
+// This is necessary because of a bug in yaml-cpp's cmake
+#define YAML_CPP_DLL
+// This is necessary because yaml-cpp does not always use dllimport/dllexport consistently
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#pragma warning(disable : 4275)
+#endif
+#include "yaml-cpp/yaml.h"
+#ifdef _WIN32
+#pragma warning(pop)
+#endif
 
 #include <mcap/mcap.hpp>
 
@@ -31,31 +44,31 @@
 #include <utility>
 #include <vector>
 
-#define DECLARE_YAML_VALUE_CONVERTER(ENUM_TYPE, ...)                          \
-  template <>                                                                 \
-  struct convert<ENUM_TYPE> {                                                 \
-    static Node encode(const ENUM_TYPE& e) {                                  \
-      static const std::pair<ENUM_TYPE, std::string> mapping[] = __VA_ARGS__; \
-      for (const auto& m : mapping) {                                         \
-        if (m.first == e) {                                                   \
-          return Node(m.second);                                              \
-        }                                                                     \
-      }                                                                       \
-      return Node("");                                                        \
-    }                                                                         \
-                                                                              \
-    static bool decode(const Node& node, ENUM_TYPE& e) {                      \
-      static const std::pair<ENUM_TYPE, std::string> mapping[] = __VA_ARGS__; \
-      const auto val = node.as<std::string>();                                \
-      for (const auto& m : mapping) {                                         \
-        if (m.second == val) {                                                \
-          e = m.first;                                                        \
-          return true;                                                        \
-        }                                                                     \
-      }                                                                       \
-      return false;                                                           \
-    }                                                                         \
-  };
+#define DECLARE_YAML_VALUE_MAP(KEY_TYPE, VALUE_TYPE, ...)                   \
+  template <>                                                               \
+  struct convert<KEY_TYPE> {                                                \
+    static Node encode(const KEY_TYPE& e) {                                 \
+      static const std::pair<KEY_TYPE, VALUE_TYPE> mapping[] = __VA_ARGS__; \
+      for (const auto& m : mapping) {                                       \
+        if (m.first == e) {                                                 \
+          return Node(m.second);                                            \
+        }                                                                   \
+      }                                                                     \
+      return Node("");                                                      \
+    }                                                                       \
+                                                                            \
+    static bool decode(const Node& node, KEY_TYPE& e) {                     \
+      static const std::pair<KEY_TYPE, VALUE_TYPE> mapping[] = __VA_ARGS__; \
+      const auto val = node.as<VALUE_TYPE>();                               \
+      for (const auto& m : mapping) {                                       \
+        if (m.second == val) {                                              \
+          e = m.first;                                                      \
+          return true;                                                      \
+        }                                                                   \
+      }                                                                     \
+      return false;                                                         \
+    }                                                                       \
+  }
 
 namespace {
 
@@ -69,16 +82,25 @@ struct McapWriterOptions : mcap::McapWriterOptions {
 
 namespace YAML {
 
-DECLARE_YAML_VALUE_CONVERTER(mcap::Compression, {{mcap::Compression::None, "None"},
-                                                 {mcap::Compression::Lz4, "Lz4"},
-                                                 {mcap::Compression::Zstd, "Zstd"}});
+// COMPATIBILITY(foxy, galactic) - optional_assign is defined in rosbag2_storage/yaml.hpp in Humble
+template <typename T>
+void optional_assign(const Node& node, std::string field, T& assign_to) {
+  if (node[field]) {
+    assign_to = node[field].as<T>();
+  }
+}
 
-DECLARE_YAML_VALUE_CONVERTER(mcap::CompressionLevel,
-                             {{mcap::CompressionLevel::Fastest, "Fastest"},
-                              {mcap::CompressionLevel::Fast, "Fast"},
-                              {mcap::CompressionLevel::Default, "Default"},
-                              {mcap::CompressionLevel::Slow, "Slow"},
-                              {mcap::CompressionLevel::Slowest, "Slowest"}});
+DECLARE_YAML_VALUE_MAP(mcap::Compression, std::string,
+                       {{mcap::Compression::None, "None"},
+                        {mcap::Compression::Lz4, "Lz4"},
+                        {mcap::Compression::Zstd, "Zstd"}});
+
+DECLARE_YAML_VALUE_MAP(mcap::CompressionLevel, std::string,
+                       {{mcap::CompressionLevel::Fastest, "Fastest"},
+                        {mcap::CompressionLevel::Fast, "Fast"},
+                        {mcap::CompressionLevel::Default, "Default"},
+                        {mcap::CompressionLevel::Slow, "Slow"},
+                        {mcap::CompressionLevel::Slowest, "Slowest"}});
 
 template <>
 struct convert<McapWriterOptions> {

@@ -87,3 +87,7 @@ $ cd rosbag2_storage_mcap
 $ source install/local_setup.bash
 $ ros2 bag info -s mcap path/to/your_recording.mcap
 ```
+
+### ROS 2 Distro maintenance
+
+Whenever a ROS 2 distribution reaches EOL, search for comments marked COMPATIBILITY - which may no longer be needed when no new releases will be made for that distro.

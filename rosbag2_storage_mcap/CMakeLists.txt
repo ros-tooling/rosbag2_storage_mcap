@@ -37,11 +37,13 @@ ament_target_dependencies(${PROJECT_NAME}
   rosbag2_storage)
 
 if(${rosbag2_storage_VERSION} VERSION_GREATER_EQUAL 0.10.0)
+  # COMPATIBILITY(galactic) - 0.9.x is the Galactic release
   target_compile_definitions(${PROJECT_NAME} PRIVATE
     ROSBAG2_STORAGE_MCAP_OVERRIDE_SEEK_METHOD
   )
 endif()
 if(${rosbag2_storage_VERSION} VERSION_GREATER_EQUAL 0.4.0)
+  # COMPATIBILITY(foxy) - 0.3.x is the Foxy release
   target_compile_definitions(${PROJECT_NAME} PRIVATE
     ROSBAG2_STORAGE_MCAP_HAS_STORAGE_OPTIONS
   )
