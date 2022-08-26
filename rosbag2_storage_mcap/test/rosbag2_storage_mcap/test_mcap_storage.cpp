@@ -45,9 +45,8 @@ TEST_F(TemporaryDirectoryFixture, can_write_and_read_basic_mcap_file) {
   const std::string topic_name = "test_topic";
   const std::string message_data = "Test Message 1";
   const std::string storage_id = "mcap";
-  // NOTE: using cumbersome APIs for Foxy compatibility,
-  // which did not yet provide plain-message API
-  // TODO(emersonknapp) - when Foxy reaches EOL this code can get cut way back
+  // COMPATIBILITY(foxy)
+  // using verbose APIs for Foxy compatibility which did not yet provide plain-message API
   rclcpp::Serialization<std_msgs::msg::String> serialization;
 
   {

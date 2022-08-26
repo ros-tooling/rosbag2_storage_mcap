@@ -18,6 +18,24 @@
 #include "rosbag2_storage/ros_helper.hpp"
 #include "rosbag2_storage/storage_interfaces/read_write_interface.hpp"
 
+#ifdef ROSBAG2_STORAGE_MCAP_HAS_YAML_HPP
+#include "rosbag2_storage/yaml.hpp"
+#else
+// COMPATIBILITY(foxy, galactic) - this block is available in rosbag2_storage/yaml.hpp in H
+#ifdef _WIN32
+// This is necessary because of a bug in yaml-cpp's cmake
+#define YAML_CPP_DLL
+// This is necessary because yaml-cpp does not always use dllimport/dllexport consistently
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#pragma warning(disable : 4275)
+#endif
+#include "yaml-cpp/yaml.h"
+#ifdef _WIN32
+#pragma warning(pop)
+#endif
+#endif
+
 #include <mcap/mcap.hpp>
 
 #include <algorithm>
@@ -29,6 +47,91 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+
+#define DECLARE_YAML_VALUE_MAP(KEY_TYPE, VALUE_TYPE, ...)                   \
+  template <>                                                               \
+  struct convert<KEY_TYPE> {                                                \
+    static Node encode(const KEY_TYPE& e) {                                 \
+      static const std::pair<KEY_TYPE, VALUE_TYPE> mapping[] = __VA_ARGS__; \
+      for (const auto& m : mapping) {                                       \
+        if (m.first == e) {                                                 \
+          return Node(m.second);                                            \
+        }                                                                   \
+      }                                                                     \
+      return Node("");                                                      \
+    }                                                                       \
+                                                                            \
+    static bool decode(const Node& node, KEY_TYPE& e) {                     \
+      static const std::pair<KEY_TYPE, VALUE_TYPE> mapping[] = __VA_ARGS__; \
+      const auto val = node.as<VALUE_TYPE>();                               \
+      for (const auto& m : mapping) {                                       \
+        if (m.second == val) {                                              \
+          e = m.first;                                                      \
+          return true;                                                      \
+        }                                                                   \
+      }                                                                     \
+      return false;                                                         \
+    }                                                                       \
+  }
+
+namespace {
+
+// Simple wrapper with default constructor for use by YAML
+struct McapWriterOptions : mcap::McapWriterOptions {
+  McapWriterOptions()
+      : mcap::McapWriterOptions("ros2") {}
+};
+
+}  // namespace
+
+namespace YAML {
+
+#ifndef ROSBAG2_STORAGE_MCAP_HAS_YAML_HPP
+template <typename T>
+void optional_assign(const Node& node, std::string field, T& assign_to) {
+  if (node[field]) {
+    assign_to = node[field].as<T>();
+  }
+}
+#endif
+
+DECLARE_YAML_VALUE_MAP(mcap::Compression, std::string,
+                       {{mcap::Compression::None, "None"},
+                        {mcap::Compression::Lz4, "Lz4"},
+                        {mcap::Compression::Zstd, "Zstd"}});
+
+DECLARE_YAML_VALUE_MAP(mcap::CompressionLevel, std::string,
+                       {{mcap::CompressionLevel::Fastest, "Fastest"},
+                        {mcap::CompressionLevel::Fast, "Fast"},
+                        {mcap::CompressionLevel::Default, "Default"},
+                        {mcap::CompressionLevel::Slow, "Slow"},
+                        {mcap::CompressionLevel::Slowest, "Slowest"}});
+
+template <>
+struct convert<McapWriterOptions> {
+  // NOTE: when updating this struct, also update documentation in README.md
+  static bool decode(const Node& node, McapWriterOptions& o) {
+    optional_assign<bool>(node, "noCRC", o.noCRC);
+    optional_assign<bool>(node, "noChunking", o.noChunking);
+    optional_assign<bool>(node, "noMessageIndex", o.noMessageIndex);
+    optional_assign<bool>(node, "noSummary", o.noSummary);
+    optional_assign<uint64_t>(node, "chunkSize", o.chunkSize);
+    optional_assign<mcap::Compression>(node, "compression", o.compression);
+    optional_assign<mcap::CompressionLevel>(node, "compressionLevel", o.compressionLevel);
+    optional_assign<bool>(node, "forceCompression", o.forceCompression);
+    // Intentionally omitting "profile" and "library"
+    optional_assign<bool>(node, "noRepeatedSchemas", o.noRepeatedSchemas);
+    optional_assign<bool>(node, "noRepeatedChannels", o.noRepeatedChannels);
+    optional_assign<bool>(node, "noAttachmentIndex", o.noAttachmentIndex);
+    optional_assign<bool>(node, "noMetadataIndex", o.noMetadataIndex);
+    optional_assign<bool>(node, "noChunkIndex", o.noChunkIndex);
+    optional_assign<bool>(node, "noStatistics", o.noStatistics);
+    optional_assign<bool>(node, "noSummaryOffsets", o.noSummaryOffsets);
+    return true;
+  }
+};
+
+}  // namespace YAML
 
 namespace rosbag2_storage_plugins {
 
@@ -88,6 +191,9 @@ public:
   void remove_topic(const rosbag2_storage::TopicMetadata& topic) override;
 
 private:
+  void open_impl(const std::string& uri, rosbag2_storage::storage_interfaces::IOFlag io_flag,
+                 const std::string& storage_config_uri);
+
   bool read_and_enqueue_message();
   void ensure_summary_read();
 
@@ -136,12 +242,18 @@ MCAPStorage::~MCAPStorage() {
 #ifdef ROSBAG2_STORAGE_MCAP_HAS_STORAGE_OPTIONS
 void MCAPStorage::open(const rosbag2_storage::StorageOptions& storage_options,
                        rosbag2_storage::storage_interfaces::IOFlag io_flag) {
-  open(storage_options.uri, io_flag);
+  open_impl(storage_options.uri, io_flag, storage_options.storage_config_uri);
 }
 #endif
 
 void MCAPStorage::open(const std::string& uri,
                        rosbag2_storage::storage_interfaces::IOFlag io_flag) {
+  open_impl(uri, io_flag, "");
+}
+
+void MCAPStorage::open_impl(const std::string& uri,
+                            rosbag2_storage::storage_interfaces::IOFlag io_flag,
+                            const std::string& storage_config_uri) {
   switch (io_flag) {
     case rosbag2_storage::storage_interfaces::IOFlag::READ_ONLY: {
       relative_path_ = uri;
@@ -163,7 +275,12 @@ void MCAPStorage::open(const std::string& uri,
       relative_path_ = uri + FILE_EXTENSION;
 
       mcap_writer_ = std::make_unique<mcap::McapWriter>();
-      mcap::McapWriterOptions options{"ros2"};
+      McapWriterOptions options;
+      if (!storage_config_uri.empty()) {
+        YAML::Node yaml_node = YAML::LoadFile(storage_config_uri);
+        options = yaml_node.as<McapWriterOptions>();
+      }
+
       auto status = mcap_writer_->open(relative_path_, options);
       if (!status.ok()) {
         throw std::runtime_error(status.message);
