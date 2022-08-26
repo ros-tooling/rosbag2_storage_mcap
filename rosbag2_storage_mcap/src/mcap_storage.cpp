@@ -18,6 +18,9 @@
 #include "rosbag2_storage/ros_helper.hpp"
 #include "rosbag2_storage/storage_interfaces/read_write_interface.hpp"
 
+#ifdef ROSBAG2_STORAGE_MCAP_HAS_YAML_HPP
+#include "rosbag2_storage/yaml.hpp"
+#else
 // COMPATIBILITY(foxy, galactic) - this block is available in rosbag2_storage/yaml.hpp in H
 #ifdef _WIN32
 // This is necessary because of a bug in yaml-cpp's cmake
@@ -30,6 +33,7 @@
 #include "yaml-cpp/yaml.h"
 #ifdef _WIN32
 #pragma warning(pop)
+#endif
 #endif
 
 #include <mcap/mcap.hpp>
@@ -82,13 +86,14 @@ struct McapWriterOptions : mcap::McapWriterOptions {
 
 namespace YAML {
 
-// COMPATIBILITY(foxy, galactic) - optional_assign is defined in rosbag2_storage/yaml.hpp in Humble
+#ifndef ROSBAG2_STORAGE_MCAP_HAS_YAML_HPP
 template <typename T>
 void optional_assign(const Node& node, std::string field, T& assign_to) {
   if (node[field]) {
     assign_to = node[field].as<T>();
   }
 }
+#endif
 
 DECLARE_YAML_VALUE_MAP(mcap::Compression, std::string,
                        {{mcap::Compression::None, "None"},

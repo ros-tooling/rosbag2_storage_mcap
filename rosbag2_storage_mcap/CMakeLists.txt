@@ -36,18 +36,22 @@ ament_target_dependencies(${PROJECT_NAME}
   rcutils
   rosbag2_storage)
 
-if(${rosbag2_storage_VERSION} VERSION_GREATER_EQUAL 0.10.0)
-  # COMPATIBILITY(galactic) - 0.9.x is the Galactic release
-  target_compile_definitions(${PROJECT_NAME} PRIVATE
-    ROSBAG2_STORAGE_MCAP_OVERRIDE_SEEK_METHOD
-  )
-endif()
+set(MCAP_COMPILE_DEFS)
+# COMPATIBILITY(foxy) - 0.3.x is the Foxy release
 if(${rosbag2_storage_VERSION} VERSION_GREATER_EQUAL 0.4.0)
-  # COMPATIBILITY(foxy) - 0.3.x is the Foxy release
-  target_compile_definitions(${PROJECT_NAME} PRIVATE
-    ROSBAG2_STORAGE_MCAP_HAS_STORAGE_OPTIONS
-  )
+  list(APPEND MCAP_COMPILE_DEFS ROSBAG2_STORAGE_MCAP_HAS_STORAGE_OPTIONS)
+  list(APPEND MCAP_COMPILE_DEFS ROSBAG2_STORAGE_MCAP_WRITER_CREATES_DIRECTORY)
 endif()
+# COMPATIBILITY(galactic) - 0.9.x is the Galactic release
+if(${rosbag2_storage_VERSION} VERSION_GREATER_EQUAL 0.10.0)
+  list(APPEND MCAP_COMPILE_DEFS ROSBAG2_STORAGE_MCAP_OVERRIDE_SEEK_METHOD)
+endif()
+# COMPATIBILITY(foxy, galactic) - 0.15.x is the Humble release
+if(${rosbag2_storage_VERSION} VERSION_GREATER_EQUAL 0.15.0)
+  list(APPEND MCAP_COMPILE_DEFS ROSBAG2_STORAGE_MCAP_HAS_YAML_HPP)
+endif()
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE ${MCAP_COMPILE_DEFS})
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
@@ -78,13 +82,7 @@ if(BUILD_TESTING)
   ament_add_gmock(test_mcap_storage test/rosbag2_storage_mcap/test_mcap_storage.cpp)
   target_link_libraries(test_mcap_storage ${PROJECT_NAME})
   ament_target_dependencies(test_mcap_storage rosbag2_storage rosbag2_cpp rosbag2_test_common std_msgs)
-  # share compile defs from main library
-  get_target_property(test_mcap_storage_definitions ${PROJECT_NAME} COMPILE_DEFINITIONS)
-  target_compile_definitions(test_mcap_storage PRIVATE ${test_mcap_storage_definitions})
-  if(${rosbag2_cpp_VERSION} VERSION_GREATER_EQUAL 0.4.0)
-    target_compile_definitions(test_mcap_storage PRIVATE
-      ROSBAG2_STORAGE_MCAP_WRITER_CREATES_DIRECTORY)
-  endif()
+  target_compile_definitions(test_mcap_storage PRIVATE ${MCAP_COMPILE_DEFS})
 endif()
 
 
