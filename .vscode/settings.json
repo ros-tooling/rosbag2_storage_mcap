@@ -9,4 +9,5 @@
     "[cpp]": {
         "editor.formatOnSave": true
     },
+    "cmake.sourceDirectory": "${workspaceFolder}/rosbag2_storage_mcap",
 }

@@ -50,6 +50,10 @@ endif()
 if(${rosbag2_storage_VERSION} VERSION_GREATER_EQUAL 0.15.0)
   list(APPEND MCAP_COMPILE_DEFS ROSBAG2_STORAGE_MCAP_HAS_YAML_HPP)
 endif()
+# COMPATIBILITY(foxy, galactic, humble) - 0.17.x is the Rolling release.
+if(${rosbag2_storage_VERSION} VERSION_GREATER_EQUAL 0.17.0)
+  list(APPEND MCAP_COMPILE_DEFS ROSBAG2_STORAGE_MCAP_HAS_STORAGE_FILTER_TOPIC_REGEX)
+endif()
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${MCAP_COMPILE_DEFS})
 
