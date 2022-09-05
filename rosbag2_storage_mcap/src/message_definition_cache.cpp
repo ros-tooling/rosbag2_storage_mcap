@@ -70,23 +70,23 @@ static std::set<std::string> parse_idl_dependencies(const std::string& text) {
   return dependencies;
 }
 
-std::set<std::string> parse_dependencies(MessageDefinitionFormat format, const std::string& text,
+std::set<std::string> parse_dependencies(Format format, const std::string& text,
                                          const std::string& package_context) {
   switch (format) {
-    case MessageDefinitionFormat::ROS2MSG:
+    case Format::MSG:
       return parse_msg_dependencies(text, package_context);
-    case MessageDefinitionFormat::ROS2IDL:
+    case Format::IDL:
       return parse_idl_dependencies(text);
     default:
       throw std::runtime_error("switch is not exhaustive");
   }
 }
 
-static const char* extension_for_format(MessageDefinitionFormat format) {
+static const char* extension_for_format(Format format) {
   switch (format) {
-    case MessageDefinitionFormat::ROS2MSG:
+    case Format::MSG:
       return ".msg";
-    case MessageDefinitionFormat::ROS2IDL:
+    case Format::IDL:
       return ".idl";
     default:
       throw std::runtime_error("switch is not exhaustive");
@@ -104,8 +104,7 @@ static bool msg_definition_exists(const std::string& package_resource_name) {
   return file.good();
 }
 
-MessageSpec::MessageSpec(MessageDefinitionFormat format, std::string text,
-                         const std::string& package_context)
+MessageSpec::MessageSpec(Format format, std::string text, const std::string& package_context)
     : dependencies(parse_dependencies(format, text, package_context))
     , text(std::move(text))
     , format(format) {}
@@ -139,11 +138,11 @@ const MessageSpec& MessageDefinitionCache::load_message_spec(
   return spec;
 }
 
-std::pair<MessageDefinitionFormat, std::string> MessageDefinitionCache::get_full_text(
+std::pair<Format, std::string> MessageDefinitionCache::get_full_text(
   const std::string& root_package_resource_name) {
-  MessageDefinitionFormat format = MessageDefinitionFormat::ROS2MSG;
+  Format format = Format::MSG;
   if (!msg_definition_exists(root_package_resource_name)) {
-    format = MessageDefinitionFormat::ROS2IDL;
+    format = Format::IDL;
   }
   std::string result;
   std::unordered_set<std::string> seen_deps = {root_package_resource_name};
@@ -151,7 +150,7 @@ std::pair<MessageDefinitionFormat, std::string> MessageDefinitionCache::get_full
     [&](const std::string& package_resource_name) {
       const MessageSpec& spec =
         load_message_spec(DefinitionIdentifier{format, package_resource_name});
-      if (format == MessageDefinitionFormat::ROS2IDL) {
+      if (format == Format::IDL) {
         result +=
           "\n================================================================================\nIDL:"
           " ";

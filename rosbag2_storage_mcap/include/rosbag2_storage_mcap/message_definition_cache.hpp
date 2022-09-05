@@ -12,23 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef MESSAGE_DEFINITION_CACHE_HPP_
-#define MESSAGE_DEFINITION_CACHE_HPP_
+#ifndef ROSBAG2_STORAGE_MCAP__MESSAGE_DEFINITION_CACHE_HPP_
+#define ROSBAG2_STORAGE_MCAP__MESSAGE_DEFINITION_CACHE_HPP_
 
 #include <set>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 
 namespace rosbag2_storage_mcap::internal {
 
-enum struct MessageDefinitionFormat {
-  ROS2IDL,
-  ROS2MSG,
+enum struct Format {
+  IDL,
+  MSG,
 };
 
 struct DefinitionIdentifier {
-  MessageDefinitionFormat format;
+  Format format;
   std::string package_resource_name;
 
   bool operator==(const DefinitionIdentifier& di) const {
@@ -37,26 +38,26 @@ struct DefinitionIdentifier {
 };
 
 struct MessageSpec {
-  MessageSpec(MessageDefinitionFormat format, std::string text, const std::string& package_context);
+  MessageSpec(Format format, std::string text, const std::string& package_context);
   const std::set<std::string> dependencies;
   const std::string text;
-  MessageDefinitionFormat format;
+  Format format;
 };
 
 class MessageDefinitionCache final {
 public:
   /**
    * Concatenate the message definition with its dependencies into a self-contained schema.
-   * Uses a format similar to ROS 1's gendeps:
-   * https://github.com/ros/ros/blob/93d8da32091b8b43702eab5d3202f4511dfeb7dc/core/roslib/src/roslib/gentools.py#L239
+   * The format is different for MSG and IDL definitions, and is described fully here:
+   * [MSG](https://mcap.dev/specification/appendix.html#ros2msg-data-format)
+   * [IDL](https://mcap.dev/specification/appendix.html#ros2idl-data-format)
    */
-  std::pair<MessageDefinitionFormat, std::string> get_full_text(
-    const std::string& package_resource_name);
+  std::pair<Format, std::string> get_full_text(const std::string& package_resource_name);
 
 private:
   struct DefinitionIdentifierHash {
     std::size_t operator()(const DefinitionIdentifier& di) const {
-      std::size_t h1 = std::hash<MessageDefinitionFormat>()(di.format);
+      std::size_t h1 = std::hash<Format>()(di.format);
       std::size_t h2 = std::hash<std::string>()(di.package_resource_name);
       return h1 ^ h2;
     }
@@ -71,9 +72,9 @@ private:
     msg_specs_by_definition_identifier_;
 };
 
-std::set<std::string> parse_dependencies(MessageDefinitionFormat format, const std::string& text,
+std::set<std::string> parse_dependencies(Format format, const std::string& text,
                                          const std::string& package_context);
 
 }  // namespace rosbag2_storage_mcap::internal
 
-#endif  // MESSAGE_DEFINITION_CACHE_HPP_
+#endif  // ROSBAG2_STORAGE_MCAP__MESSAGE_DEFINITION_CACHE_HPP_

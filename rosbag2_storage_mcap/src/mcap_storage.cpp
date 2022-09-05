@@ -523,7 +523,7 @@ void MCAPStorage::write(std::shared_ptr<const rosbag2_storage::SerializedBagMess
     auto [format, full_text] = msgdef_cache_.get_full_text(datatype);
     mcap::Schema schema;
     schema.name = datatype;
-    if (format == rosbag2_storage_mcap::internal::MessageDefinitionFormat::ROS2MSG) {
+    if (format == rosbag2_storage_mcap::internal::Format::MSG) {
       schema.encoding = "ros2msg";
     } else {
       schema.encoding = "ros2idl";
