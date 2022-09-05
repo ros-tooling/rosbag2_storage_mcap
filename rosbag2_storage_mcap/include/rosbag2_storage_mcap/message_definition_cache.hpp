@@ -22,10 +22,25 @@
 
 namespace rosbag2_storage_mcap::internal {
 
+enum struct MessageDefinitionFormat {
+  ROS2IDL,
+  ROS2MSG,
+};
+
+struct DefinitionIdentifier {
+  MessageDefinitionFormat format;
+  std::string package_resource_name;
+
+  bool operator==(const DefinitionIdentifier& di) const {
+    return (format == di.format) && (package_resource_name == di.package_resource_name);
+  }
+};
+
 struct MessageSpec {
-  MessageSpec(std::string text, const std::string& package_context);
+  MessageSpec(MessageDefinitionFormat format, std::string text, const std::string& package_context);
   const std::set<std::string> dependencies;
   const std::string text;
+  MessageDefinitionFormat format;
 };
 
 class MessageDefinitionCache final {
@@ -35,17 +50,29 @@ public:
    * Uses a format similar to ROS 1's gendeps:
    * https://github.com/ros/ros/blob/93d8da32091b8b43702eab5d3202f4511dfeb7dc/core/roslib/src/roslib/gentools.py#L239
    */
-  std::string get_full_text(const std::string& datatype);
+  std::pair<MessageDefinitionFormat, std::string> get_full_text(
+    const std::string& package_resource_name);
 
 private:
+  struct DefinitionIdentifierHash {
+    std::size_t operator()(const DefinitionIdentifier& di) const {
+      std::size_t h1 = std::hash<MessageDefinitionFormat>()(di.format);
+      std::size_t h2 = std::hash<std::string>()(di.package_resource_name);
+      return h1 ^ h2;
+    }
+  };
   /**
    * Load and parse the message file referenced by the given datatype, or return it from
    * msg_specs_by_datatype
    */
-  const MessageSpec& load_message_spec(const std::string& datatype);
+  const MessageSpec& load_message_spec(const DefinitionIdentifier& definition_identifier);
 
-  std::unordered_map<std::string, MessageSpec> msg_specs_by_datatype_;
+  std::unordered_map<DefinitionIdentifier, MessageSpec, DefinitionIdentifierHash>
+    msg_specs_by_definition_identifier_;
 };
+
+std::set<std::string> parse_dependencies(MessageDefinitionFormat format, const std::string& text,
+                                         const std::string& package_context);
 
 }  // namespace rosbag2_storage_mcap::internal
 

@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "message_definition_cache.hpp"
 #include "rcutils/logging_macros.h"
 #include "rosbag2_storage/metadata_io.hpp"
 #include "rosbag2_storage/ros_helper.hpp"
 #include "rosbag2_storage/storage_interfaces/read_write_interface.hpp"
+#include "rosbag2_storage_mcap/message_definition_cache.hpp"
 
 #ifdef ROSBAG2_STORAGE_MCAP_HAS_YAML_HPP
 #include "rosbag2_storage/yaml.hpp"
@@ -520,10 +520,14 @@ void MCAPStorage::write(std::shared_ptr<const rosbag2_storage::SerializedBagMess
   const auto& datatype = topic_info.topic_metadata.type;
   const auto schema_it = schema_ids.find(datatype);
   if (schema_it == schema_ids.end()) {
-    std::string full_text = msgdef_cache_.get_full_text(datatype);
+    auto [format, full_text] = msgdef_cache_.get_full_text(datatype);
     mcap::Schema schema;
     schema.name = datatype;
-    schema.encoding = "ros2msg";
+    if (format == rosbag2_storage_mcap::internal::MessageDefinitionFormat::ROS2MSG) {
+      schema.encoding = "ros2msg";
+    } else {
+      schema.encoding = "ros2idl";
+    }
     schema.data.assign(reinterpret_cast<const std::byte*>(full_text.data()),
                        reinterpret_cast<const std::byte*>(full_text.data() + full_text.size()));
     mcap_writer_->addSchema(schema);
