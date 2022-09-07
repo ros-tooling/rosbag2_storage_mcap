@@ -19,33 +19,106 @@
 #include <string>
 
 using rosbag2_storage_mcap::internal::Format;
+using rosbag2_storage_mcap::internal::MessageDefinitionCache;
 using rosbag2_storage_mcap::internal::parse_dependencies;
 using ::testing::UnorderedElementsAre;
 
 TEST(test_message_definition_cache, can_find_idl_includes) {
   const char sample[] = R"r(
-#include "autoware_auto_control_msgs/msg/LongitudinalCommand.idl"
+#include "rosbag2_storage_mcap_test_fixture_interfaces/msg/BasicIdlA.idl"
 
-#include <autoware_auto_control_msgs/msg/AckermannLateralCommand.idl>
-// trailing spaces
-#include "builtin_interfaces/msg/Time.idl"   
+#include <rosbag2_storage_mcap_test_fixture_interfaces/msg/BasicIdlB.idl>
 
-module autoware_auto_control_msgs {
+module rosbag2_storage_mcap_test_fixture_interfaces {
   module msg {
-    @verbatim (language="comment", text=
-      " Lateral and longitudinal control message for Ackermann-style platforms")
-    struct AckermannControlCommand {
-      builtin_interfaces::msg::Time stamp;
-
-      autoware_auto_control_msgs::msg::AckermannLateralCommand lateral;
-      autoware_auto_control_msgs::msg::LongitudinalCommand longitudinal;
+    struct ComplexIdl {
+      rosbag2_storage_mcap_test_fixture_interfaces::msg::BasicIdlA a;
+      rosbag2_storage_mcap_test_fixture_interfaces::msg::BasicIdlB b;
     };
   };
 };
+
 )r";
   std::set<std::string> dependencies = parse_dependencies(Format::IDL, sample, "");
   ASSERT_THAT(dependencies,
-              UnorderedElementsAre("autoware_auto_control_msgs/msg/AckermannLateralCommand",
-                                   "autoware_auto_control_msgs/msg/LongitudinalCommand",
-                                   "builtin_interfaces/msg/Time"));
+              UnorderedElementsAre("rosbag2_storage_mcap_test_fixture_interfaces/msg/BasicIdlA",
+                                   "rosbag2_storage_mcap_test_fixture_interfaces/msg/BasicIdlB"));
+}
+
+TEST(test_message_definition_cache, can_find_msg_deps) {
+  MessageDefinitionCache cache;
+  auto [format, content] =
+    cache.get_full_text("rosbag2_storage_mcap_test_fixture_interfaces/ComplexMsg");
+  ASSERT_EQ(format, Format::MSG);
+  ASSERT_EQ(content,
+            R"r(rosbag2_storage_mcap_test_fixture_interfaces/BasicMsg b
+
+================================================================================
+MSG: rosbag2_storage_mcap_test_fixture_interfaces/BasicMsg
+float32 c
+)r");
+}
+
+TEST(test_message_definition_cache, can_find_idl_deps) {
+  MessageDefinitionCache cache;
+  auto [format, content] =
+    cache.get_full_text("rosbag2_storage_mcap_test_fixture_interfaces/msg/ComplexIdl");
+  EXPECT_EQ(format, Format::IDL);
+  EXPECT_EQ(content,
+            R"r(================================================================================
+IDL: rosbag2_storage_mcap_test_fixture_interfaces/msg/ComplexIdl
+#include "rosbag2_storage_mcap_test_fixture_interfaces/msg/BasicIdl.idl"
+
+module rosbag2_storage_mcap_test_fixture_interfaces {
+  module msg {
+    struct ComplexIdl {
+      rosbag2_storage_mcap_test_fixture_interfaces::msg::BasicIdl a;
+    };
+  };
+};
+
+================================================================================
+IDL: rosbag2_storage_mcap_test_fixture_interfaces/msg/BasicIdl
+module rosbag2_storage_mcap_test_fixture_interfaces {
+  module msg {
+    struct BasicIdl {
+        float x;
+    };
+  };
+};
+)r");
+}
+
+TEST(test_message_definition_cache, can_resolve_msg_with_idl_deps) {
+  MessageDefinitionCache cache;
+  auto [format, content] =
+    cache.get_full_text("rosbag2_storage_mcap_test_fixture_interfaces/msg/ComplexMsgDependsOnIdl");
+  EXPECT_EQ(format, Format::IDL);
+  EXPECT_EQ(content,
+            R"r(================================================================================
+IDL: rosbag2_storage_mcap_test_fixture_interfaces/msg/ComplexMsgDependsOnIdl
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from rosbag2_storage_mcap_test_fixture_interfaces/msg/ComplexMsgDependsOnIdl.msg
+// generated code does not contain a copyright notice
+
+#include "rosbag2_storage_mcap_test_fixture_interfaces/msg/BasicIdl.idl"
+
+module rosbag2_storage_mcap_test_fixture_interfaces {
+  module msg {
+    struct ComplexMsgDependsOnIdl {
+      rosbag2_storage_mcap_test_fixture_interfaces::msg::BasicIdl a;
+    };
+  };
+};
+
+================================================================================
+IDL: rosbag2_storage_mcap_test_fixture_interfaces/msg/BasicIdl
+module rosbag2_storage_mcap_test_fixture_interfaces {
+  module msg {
+    struct BasicIdl {
+        float x;
+    };
+  };
+};
+)r");
 }

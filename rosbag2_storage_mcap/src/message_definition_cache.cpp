@@ -17,8 +17,10 @@
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <ament_index_cpp/get_resource.hpp>
 #include <ament_index_cpp/get_resources.hpp>
+#include <rcutils/logging_macros.h>
 
 #include <fstream>
+#include <optional>
 #include <regex>
 #include <set>
 #include <string>
@@ -93,6 +95,24 @@ static const char* extension_for_format(Format format) {
   }
 }
 
+static std::string delimiter(const DefinitionIdentifier& definition_identifier) {
+  std::string result =
+    "================================================================================\n";
+  switch (definition_identifier.format) {
+    case Format::MSG:
+      result += "MSG: ";
+      break;
+    case Format::IDL:
+      result += "IDL: ";
+      break;
+    default:
+      throw std::runtime_error("switch is not exhaustive");
+  }
+  result += definition_identifier.package_resource_name;
+  result += "\n";
+  return result;
+}
+
 MessageSpec::MessageSpec(Format format, std::string text, const std::string& package_context)
     : dependencies(parse_dependencies(format, text, package_context))
     , text(std::move(text))
@@ -114,6 +134,9 @@ const MessageSpec& MessageDefinitionCache::load_message_spec(
   std::string share_dir = ament_index_cpp::get_package_share_directory(package);
   std::ifstream file{share_dir + "/msg/" + match[2].str() +
                      extension_for_format(definition_identifier.format)};
+  if (!file.good()) {
+    throw DefinitionNotFoundError(definition_identifier.package_resource_name);
+  }
 
   std::string contents{std::istreambuf_iterator(file), {}};
   const MessageSpec& spec =
@@ -133,26 +156,14 @@ std::pair<Format, std::string> MessageDefinitionCache::get_full_text(
 
   std::function<std::string(const DefinitionIdentifier&)> append_recursive =
     [&](const DefinitionIdentifier& definition_identifier) {
-      std::string result = "";
       const MessageSpec& spec = load_message_spec(definition_identifier);
-      if (definition_identifier.format == Format::IDL) {
-        result +=
-          "\n================================================================================\nIDL:"
-          " ";
-        result += definition_identifier.package_resource_name;
-        result += '\n';
-      } else if (!result.empty()) {
-        result +=
-          "\n================================================================================\nMSG:"
-          " ";
-        result += definition_identifier.package_resource_name;
-        result += '\n';
-      }
-      result += spec.text;
+      std::string result = spec.text;
       for (const auto& dep_name : spec.dependencies) {
         DefinitionIdentifier dep{definition_identifier.format, dep_name};
         bool inserted = seen_deps.insert(dep).second;
         if (inserted) {
+          result += "\n";
+          result += delimiter(dep);
           result += append_recursive(dep);
         }
       }
@@ -163,9 +174,13 @@ std::pair<Format, std::string> MessageDefinitionCache::get_full_text(
   Format format = Format::MSG;
   try {
     result = append_recursive(DefinitionIdentifier{format, root_package_resource_name});
-  } catch (std::ios_base::failure& e) {
+  } catch (const DefinitionNotFoundError& err) {
+    // log that we've fallen back
+    RCUTILS_LOG_WARN_NAMED("rosbag2_storage_mcap", "no .msg definition for %s, falling back to IDL",
+                           err.what());
     format = Format::IDL;
-    result = append_recursive(DefinitionIdentifier{format, root_package_resource_name});
+    DefinitionIdentifier root_definition_identifier{format, root_package_resource_name};
+    result = delimiter(root_definition_identifier) + append_recursive(root_definition_identifier);
   }
   return std::make_pair(format, result);
 }

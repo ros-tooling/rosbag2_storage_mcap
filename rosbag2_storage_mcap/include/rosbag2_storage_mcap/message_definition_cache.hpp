@@ -28,6 +28,13 @@ enum struct Format {
   MSG,
 };
 
+struct MessageSpec {
+  MessageSpec(Format format, std::string text, const std::string& package_context);
+  const std::set<std::string> dependencies;
+  const std::string text;
+  Format format;
+};
+
 struct DefinitionIdentifier {
   Format format;
   std::string package_resource_name;
@@ -37,11 +44,16 @@ struct DefinitionIdentifier {
   }
 };
 
-struct MessageSpec {
-  MessageSpec(Format format, std::string text, const std::string& package_context);
-  const std::set<std::string> dependencies;
-  const std::string text;
-  Format format;
+class DefinitionNotFoundError : public std::exception {
+private:
+  std::string name_;
+
+public:
+  explicit DefinitionNotFoundError(const std::string& name)
+      : name_(name) {}
+  const char* what() const throw() {
+    return name_.c_str();
+  }
 };
 
 class MessageDefinitionCache final {
@@ -51,6 +63,8 @@ public:
    * The format is different for MSG and IDL definitions, and is described fully here:
    * [MSG](https://mcap.dev/specification/appendix.html#ros2msg-data-format)
    * [IDL](https://mcap.dev/specification/appendix.html#ros2idl-data-format)
+   * Throws DefinitionNotFoundError if one or more definition files are missing for the given
+   * package resource name.
    */
   std::pair<Format, std::string> get_full_text(const std::string& package_resource_name);
 
