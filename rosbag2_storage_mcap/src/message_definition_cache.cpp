@@ -93,17 +93,6 @@ static const char* extension_for_format(Format format) {
   }
 }
 
-static bool msg_definition_exists(const std::string& package_resource_name) {
-  std::smatch match;
-  if (!std::regex_match(package_resource_name, match, PACKAGE_TYPENAME_REGEX)) {
-    throw std::invalid_argument("Invalid package resource name: " + package_resource_name);
-  }
-  std::string package = match[1];
-  std::string share_dir = ament_index_cpp::get_package_share_directory(package);
-  std::ifstream file{share_dir + "/msg/" + match[2].str() + ".msg"};
-  return file.good();
-}
-
 MessageSpec::MessageSpec(Format format, std::string text, const std::string& package_context)
     : dependencies(parse_dependencies(format, text, package_context))
     , text(std::move(text))
@@ -140,38 +129,44 @@ const MessageSpec& MessageDefinitionCache::load_message_spec(
 
 std::pair<Format, std::string> MessageDefinitionCache::get_full_text(
   const std::string& root_package_resource_name) {
-  Format format = Format::MSG;
-  if (!msg_definition_exists(root_package_resource_name)) {
-    format = Format::IDL;
-  }
-  std::string result;
-  std::unordered_set<std::string> seen_deps = {root_package_resource_name};
-  std::function<void(const std::string&)> append_recursive =
-    [&](const std::string& package_resource_name) {
-      const MessageSpec& spec =
-        load_message_spec(DefinitionIdentifier{format, package_resource_name});
-      if (format == Format::IDL) {
+  std::unordered_set<DefinitionIdentifier, DefinitionIdentifierHash> seen_deps;
+
+  std::function<std::string(const DefinitionIdentifier&)> append_recursive =
+    [&](const DefinitionIdentifier& definition_identifier) {
+      std::string result = "";
+      const MessageSpec& spec = load_message_spec(definition_identifier);
+      if (definition_identifier.format == Format::IDL) {
         result +=
           "\n================================================================================\nIDL:"
           " ";
-        result += package_resource_name;
+        result += definition_identifier.package_resource_name;
         result += '\n';
       } else if (!result.empty()) {
         result +=
           "\n================================================================================\nMSG:"
           " ";
-        result += package_resource_name;
+        result += definition_identifier.package_resource_name;
         result += '\n';
       }
       result += spec.text;
-      for (const auto& dep : spec.dependencies) {
+      for (const auto& dep_name : spec.dependencies) {
+        DefinitionIdentifier dep{definition_identifier.format, dep_name};
         bool inserted = seen_deps.insert(dep).second;
         if (inserted) {
-          append_recursive(dep);
+          result += append_recursive(dep);
         }
       }
+      return result;
     };
-  append_recursive(root_package_resource_name);
+
+  std::string result;
+  Format format = Format::MSG;
+  try {
+    result = append_recursive(DefinitionIdentifier{format, root_package_resource_name});
+  } catch (std::ios_base::failure& e) {
+    format = Format::IDL;
+    result = append_recursive(DefinitionIdentifier{format, root_package_resource_name});
+  }
   return std::make_pair(format, result);
 }
 
