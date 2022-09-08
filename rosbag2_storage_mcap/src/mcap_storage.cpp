@@ -47,6 +47,9 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#ifdef ROSBAG2_STORAGE_MCAP_HAS_STORAGE_FILTER_TOPIC_REGEX
+#include <regex>
+#endif
 
 #define DECLARE_YAML_VALUE_MAP(KEY_TYPE, VALUE_TYPE, ...)                   \
   template <>                                                               \
@@ -138,6 +141,11 @@ namespace rosbag2_storage_plugins {
 using mcap::ByteOffset;
 using time_point = std::chrono::time_point<std::chrono::high_resolution_clock>;
 static const char FILE_EXTENSION[] = ".mcap";
+static const char LOG_NAME[] = "rosbag2_storage_mcap";
+
+static void OnProblem(const mcap::Status& status) {
+  RCUTILS_LOG_ERROR_NAMED(LOG_NAME, status.message.c_str());
+}
 
 /**
  * A storage implementation for the MCAP file format.
@@ -194,6 +202,7 @@ private:
   void open_impl(const std::string& uri, rosbag2_storage::storage_interfaces::IOFlag io_flag,
                  const std::string& storage_config_uri);
 
+  void reset_iterator(rcutils_time_point_value_t start_time = 0);
   bool read_and_enqueue_message();
   void ensure_summary_read();
 
@@ -207,7 +216,8 @@ private:
   std::unordered_map<std::string, mcap::SchemaId> schema_ids;    // datatype -> schema_id
   std::unordered_map<std::string, mcap::ChannelId> channel_ids;  // topic -> channel_id
   rosbag2_storage::StorageFilter storage_filter_;
-  std::unordered_set<std::string> filter_topics_;
+  mcap::ReadMessageOptions::ReadOrder read_order_ =
+    mcap::ReadMessageOptions::ReadOrder::LogTimeOrder;
 
   std::unique_ptr<std::ifstream> input_;
   std::unique_ptr<mcap::FileStreamReader> data_source_;
@@ -264,8 +274,7 @@ void MCAPStorage::open_impl(const std::string& uri,
       if (!status.ok()) {
         throw std::runtime_error(status.message);
       }
-      linear_view_ = std::make_unique<mcap::LinearMessageView>(mcap_reader_->readMessages());
-      linear_iterator_ = std::make_unique<mcap::LinearMessageView::Iterator>(linear_view_->begin());
+      reset_iterator();
       break;
     }
     case rosbag2_storage::storage_interfaces::IOFlag::READ_WRITE:
@@ -396,11 +405,55 @@ bool MCAPStorage::read_and_enqueue_message() {
   return true;
 }
 
+void MCAPStorage::reset_iterator(rcutils_time_point_value_t start_time) {
+  ensure_summary_read();
+  mcap::ReadMessageOptions options;
+  options.startTime = mcap::Timestamp(start_time);
+  options.readOrder = read_order_;
+  if (storage_filter_.topics.size() > 0) {
+    options.topicFilter = [this](std::string_view topic) {
+      for (const auto& match_topic : storage_filter_.topics) {
+        if (match_topic == topic) {
+          return true;
+        }
+      }
+      return false;
+    };
+  }
+#ifdef ROSBAG2_STORAGE_MCAP_HAS_STORAGE_FILTER_TOPIC_REGEX
+  if (storage_filter_.topics_regex.size() > 0) {
+    options.topicFilter = [this](std::string_view topic) {
+      std::smatch m;
+      std::string topic_string(topic);
+      std::regex re(storage_filter_.topics_regex);
+      return std::regex_match(topic_string, m, re);
+    };
+  }
+#endif
+  linear_view_ =
+    std::make_unique<mcap::LinearMessageView>(mcap_reader_->readMessages(OnProblem, options));
+  linear_iterator_ = std::make_unique<mcap::LinearMessageView::Iterator>(linear_view_->begin());
+}
+
 void MCAPStorage::ensure_summary_read() {
   if (!has_read_summary_) {
     const auto status = mcap_reader_->readSummary(mcap::ReadSummaryMethod::AllowFallbackScan);
+
     if (!status.ok()) {
       throw std::runtime_error(status.message);
+    }
+    // check if message indexes are present, if not, read in file order.
+    bool message_indexes_found = false;
+    for (const auto& ci : mcap_reader_->chunkIndexes()) {
+      if (ci.messageIndexLength > 0) {
+        message_indexes_found = true;
+        break;
+      }
+    }
+    if (!message_indexes_found) {
+      RCUTILS_LOG_WARN_NAMED(LOG_NAME,
+                             "no message indices found, falling back to reading in file order");
+      read_order_ = mcap::ReadMessageOptions::ReadOrder::FileOrder;
     }
     has_read_summary_ = true;
   }
@@ -415,18 +468,7 @@ bool MCAPStorage::has_next() {
     return true;
   }
 
-  // Continue reading messages until one matches the filter, or there are none left
-  while (true) {
-    if (!read_and_enqueue_message()) {
-      return false;
-    }
-    if (filter_topics_.empty() || filter_topics_.count(next_->topic_name)) {
-      break;
-    }
-    // Next message did not pass filter - throw it away and continue
-    next_.reset();
-  }
-  return true;
+  return read_and_enqueue_message();
 }
 
 std::shared_ptr<rosbag2_storage::SerializedBagMessage> MCAPStorage::read_next() {
@@ -449,8 +491,7 @@ std::vector<rosbag2_storage::TopicMetadata> MCAPStorage::get_all_topics_and_type
 /** ReadOnlyInterface **/
 void MCAPStorage::set_filter(const rosbag2_storage::StorageFilter& storage_filter) {
   storage_filter_ = storage_filter;
-  filter_topics_.clear();
-  filter_topics_.insert(storage_filter.topics.begin(), storage_filter.topics.end());
+  reset_iterator();
 }
 
 void MCAPStorage::reset_filter() {
@@ -458,11 +499,7 @@ void MCAPStorage::reset_filter() {
 }
 
 void MCAPStorage::seek(const rcutils_time_point_value_t& time_stamp) {
-  ensure_summary_read();
-
-  auto start_time = mcap::Timestamp(time_stamp);
-  linear_view_ = std::make_unique<mcap::LinearMessageView>(mcap_reader_->readMessages(start_time));
-  linear_iterator_ = std::make_unique<mcap::LinearMessageView::Iterator>(linear_view_->begin());
+  reset_iterator(time_stamp);
 }
 
 /** ReadWriteInterface **/
