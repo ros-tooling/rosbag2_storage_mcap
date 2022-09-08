@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>rosbag2_storage_mcap</name>
-  <version>0.2.0</version>
+  <version>0.3.0</version>
   <description>rosbag2 storage plugin using the MCAP file format</description>
   <maintainer email="ros-tooling@foxglove.dev">Foxglove</maintainer>
   <license>Apache-2.0</license>
@@ -23,6 +23,7 @@
   <test_depend>rosbag2_cpp</test_depend>
   <test_depend>rosbag2_test_common</test_depend>
   <test_depend>std_msgs</test_depend>
+  <test_depend>rosbag2_storage_mcap_test_fixture_interfaces</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
