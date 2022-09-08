@@ -174,6 +174,9 @@ public:
   std::string get_storage_identifier() const override;
 
   /** BaseReadInterface **/
+#ifdef ROSBAG2_STORAGE_MCAP_HAS_SET_READ_ORDER
+  void set_read_order(const rosbag2_storage::ReadOrder&) override;
+#endif
   bool has_next() override;
   std::shared_ptr<rosbag2_storage::SerializedBagMessage> read_next() override;
   std::vector<rosbag2_storage::TopicMetadata> get_all_topics_and_types() override;
@@ -457,6 +460,35 @@ void MCAPStorage::ensure_summary_read() {
     has_read_summary_ = true;
   }
 }
+
+#ifdef ROSBAG2_STORAGE_MCAP_HAS_SET_READ_ORDER
+void MCAPStorage::set_read_order(const rosbag2_storage::ReadOrder& read_order) {
+  auto next_read_order = read_order_;
+  switch (read_order.sort_by) {
+    case rosbag2_storage::ReadOrder::ReceivedTimestamp:
+      if (read_order.reverse) {
+        next_read_order = mcap::ReadMessageOptions::ReadOrder::ReverseLogTimeOrder;
+      } else {
+        next_read_order = mcap::ReadMessageOptions::ReadOrder::LogTimeOrder;
+      }
+      break;
+    case rosbag2_storage::ReadOrder::File:
+      if (!read_order.reverse) {
+        next_read_order = mcap::ReadMessageOptions::ReadOrder::FileOrder;
+      } else {
+        throw std::runtime_error("Reverse file order reading not implemented.");
+      }
+      break;
+    case rosbag2_storage::ReadOrder::PublishedTimestamp:
+      throw std::runtime_error("PublishedTimestamp read order not yet implemented in ROS 2");
+      break;
+  }
+  if (next_read_order != read_order_) {
+    read_order_ = next_read_order;
+    reset_iterator();
+  }
+}
+#endif
 
 bool MCAPStorage::has_next() {
   if (!linear_iterator_) {
