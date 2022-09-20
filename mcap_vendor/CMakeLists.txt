@@ -71,7 +71,18 @@ macro(build_mcap_vendor)
       ${CMAKE_INSTALL_PREFIX}/include
   )
 
-  install(TARGETS mcap EXPORT export_mcap)
+  install(
+    DIRECTORY
+    ${lz4_SOURCE_DIR}/lib
+    DESTINATION
+    ${CMAKE_INSTALL_PREFIX}/include/lz4
+  )
+
+  install(
+    TARGETS mcap
+    EXPORT export_mcap
+    INCLUDES DESTINATION include include/lz4/lib
+  )
 endmacro()
 
 ## Call vendor macro

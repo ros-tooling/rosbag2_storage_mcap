@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#define MCAP_IMPLEMENTATION
 #include "rcutils/logging_macros.h"
 #include "rosbag2_storage/metadata_io.hpp"
 #include "rosbag2_storage/ros_helper.hpp"
