@@ -79,9 +79,16 @@ macro(build_mcap_vendor)
   )
 
   install(
+    DIRECTORY
+    ${zstd_SOURCE_DIR}/lib
+    DESTINATION
+    ${CMAKE_INSTALL_PREFIX}/include/zstd
+  )
+
+  install(
     TARGETS mcap
     EXPORT export_mcap
-    INCLUDES DESTINATION include include/lz4/lib
+    INCLUDES DESTINATION include include/lz4/lib include/zstd/lib
   )
 endmacro()
 
