@@ -70,6 +70,47 @@ forceCompression: false
 $ ros2 bag record -s mcap -o my_bag --all --storage-config-file mcap_writer_options.yml
 ```
 
+### Storage Preset Profiles
+You can also use one of the preset profiles described below, for example:
+
+```
+$ ros2 bag record -s mcap -o my_bag --all --storage-preset-profile fastwrite
+```
+
+#### Default
+
+The default writer configuration records messages in uncompressed chunks, with message indexes and
+CRCs.
+
+#### `fastwrite`
+
+Configures the MCAP writer for the highest possible write throughput and lowest resource utilization. This preset does not calculate CRCs for integrity checking, and does not write a message index. This preset profile is useful for resource-constrained robots.
+
+Equivalent to this storage configuration:
+```yaml
+compression: "None"
+noChunking: true
+noCRC: true
+```
+
+Using MCAPs written with `fastwrite` as your primary storage format is not recommended. Some features will not work when reading MCAP files without a message index, such as efficiently reading out message from certain topics. When recording MCAPs on your robot with `fastwrite`, it is recommended to post-process these files afterwards,
+to restore the message index and also save storage space:
+
+```bash
+# Uses the MCAP CLI https://github.com/foxglove/mcap/tree/main/go/cli/mcap
+$ mcap compress unindexed.mcap -o compressed.mcap
+```
+
+#### `zstd`
+
+Configures the MCAP writer to use chunk compression with [zstd](http://facebook.github.io/zstd/). Chunk compression yields file sizes comparable to bags compressed with file-level compression, but allows tools to efficiently read messages without decompressing the entire bag. Also configures the writer to calculate CRCs for each chunk, which allows readers to determine if a chunk's contents are corrupted. This preset profile is useful for conserving on-robot storage space.
+
+Equivalent to this storage configuration:
+
+```yaml
+compression: "Zstd"
+compressionLevel: "Default"
+```
 
 ## Development
 
