@@ -252,33 +252,16 @@ MCAPStorage::~MCAPStorage() {
 #ifdef ROSBAG2_STORAGE_MCAP_HAS_STORAGE_OPTIONS
 void MCAPStorage::open(const rosbag2_storage::StorageOptions& storage_options,
                        rosbag2_storage::storage_interfaces::IOFlag io_flag) {
-  open_impl(storage_options.uri,
-            storage_options.storage_preset_profile,
-            io_flag,
-            storage_options.storage_config_uri);
+  open_impl(storage_options.uri, io_flag, storage_options.storage_config_uri);
 }
 #endif
 
 void MCAPStorage::open(const std::string& uri,
                        rosbag2_storage::storage_interfaces::IOFlag io_flag) {
-  open_impl(uri, "", io_flag, "");
-}
-
-static void SetOptionsForPreset(const std::string& preset_profile, McapWriterOptions& options) {
-  if (preset_profile == "fastwrite") {
-    options.compression = mcap::Compression::None;
-    options.noChunking = true;
-    options.noCRC = true;
-  } else if (preset_profile == "zstd") {
-    options.compression = mcap::Compression::Zstd;
-    options.compressionLevel = mcap::CompressionLevel::Default;
-  } else {
-    throw std::runtime_error("unknown MCAP storage preset profile: " + preset_profile);
-  }
+  open_impl(uri, io_flag, "");
 }
 
 void MCAPStorage::open_impl(const std::string& uri,
-                            const std::string& preset_profile,
                             rosbag2_storage::storage_interfaces::IOFlag io_flag,
                             const std::string& storage_config_uri) {
   switch (io_flag) {
@@ -305,8 +288,6 @@ void MCAPStorage::open_impl(const std::string& uri,
       if (!storage_config_uri.empty()) {
         YAML::Node yaml_node = YAML::LoadFile(storage_config_uri);
         options = yaml_node.as<McapWriterOptions>();
-      } else if (!preset_profile.empty()) {
-        SetOptionsForPreset(preset_profile, options);
       }
 
       auto status = mcap_writer_->open(relative_path_, options);
