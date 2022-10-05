@@ -201,7 +201,8 @@ public:
   void remove_topic(const rosbag2_storage::TopicMetadata& topic) override;
 
 private:
-  void open_impl(const std::string& uri, rosbag2_storage::storage_interfaces::IOFlag io_flag,
+  void open_impl(const std::string& uri, const std::string& preset_profile,
+                 rosbag2_storage::storage_interfaces::IOFlag io_flag,
                  const std::string& storage_config_uri);
 
   void reset_iterator(rcutils_time_point_value_t start_time = 0);
@@ -254,16 +255,37 @@ MCAPStorage::~MCAPStorage() {
 #ifdef ROSBAG2_STORAGE_MCAP_HAS_STORAGE_OPTIONS
 void MCAPStorage::open(const rosbag2_storage::StorageOptions& storage_options,
                        rosbag2_storage::storage_interfaces::IOFlag io_flag) {
-  open_impl(storage_options.uri, io_flag, storage_options.storage_config_uri);
+  open_impl(storage_options.uri, storage_options.storage_preset_profile, io_flag,
+            storage_options.storage_config_uri);
 }
 #endif
 
 void MCAPStorage::open(const std::string& uri,
                        rosbag2_storage::storage_interfaces::IOFlag io_flag) {
-  open_impl(uri, io_flag, "");
+  open_impl(uri, "", io_flag, "");
 }
 
-void MCAPStorage::open_impl(const std::string& uri,
+static void SetOptionsForPreset(const std::string& preset_profile, McapWriterOptions& options) {
+  if (preset_profile == "fastwrite") {
+    options.noChunking = true;
+    options.noCRC = true;
+  } else if (preset_profile == "zstd_fast") {
+    options.compression = mcap::Compression::Zstd;
+    options.compressionLevel = mcap::CompressionLevel::Fastest;
+    options.noCRC = true;
+  } else if (preset_profile == "zstd_small") {
+    options.compression = mcap::Compression::Zstd;
+    options.compressionLevel = mcap::CompressionLevel::Slowest;
+    options.chunkSize = 4 * 1024 * 1024;
+  } else {
+    throw std::runtime_error(
+      "unknown MCAP storage preset profile "
+      "(valid options are 'fastwrite', 'zstd_fast', 'zstd_small'): " +
+      preset_profile);
+  }
+}
+
+void MCAPStorage::open_impl(const std::string& uri, const std::string& preset_profile,
                             rosbag2_storage::storage_interfaces::IOFlag io_flag,
                             const std::string& storage_config_uri) {
   switch (io_flag) {
@@ -287,9 +309,15 @@ void MCAPStorage::open_impl(const std::string& uri,
 
       mcap_writer_ = std::make_unique<mcap::McapWriter>();
       McapWriterOptions options;
+      // Set options from preset profile first
+      if (!preset_profile.empty()) {
+        SetOptionsForPreset(preset_profile, options);
+      }
+      // If both preset profile and storage config are specified,
+      // options from the storage config are overlaid on the options from the preset profile.
       if (!storage_config_uri.empty()) {
         YAML::Node yaml_node = YAML::LoadFile(storage_config_uri);
-        options = yaml_node.as<McapWriterOptions>();
+        YAML::convert<McapWriterOptions>::decode(yaml_node, options);
       }
 
       auto status = mcap_writer_->open(relative_path_, options);
