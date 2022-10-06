@@ -2,5 +2,5 @@
 Changelog for package rosbag2_storage_mcap_test_fixture_interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.4.0 (2022-10-06)
+------------------
