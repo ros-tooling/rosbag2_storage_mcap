@@ -44,7 +44,6 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 #ifdef ROSBAG2_STORAGE_MCAP_HAS_STORAGE_FILTER_TOPIC_REGEX
@@ -144,7 +143,7 @@ static const char FILE_EXTENSION[] = ".mcap";
 static const char LOG_NAME[] = "rosbag2_storage_mcap";
 
 static void OnProblem(const mcap::Status& status) {
-  RCUTILS_LOG_ERROR_NAMED(LOG_NAME, status.message.c_str());
+  RCUTILS_LOG_ERROR_NAMED(LOG_NAME, "%s", status.message.c_str());
 }
 
 /**
@@ -153,7 +152,7 @@ static void OnProblem(const mcap::Status& status) {
 class MCAPStorage : public rosbag2_storage::storage_interfaces::ReadWriteInterface {
 public:
   MCAPStorage();
-  virtual ~MCAPStorage();
+  ~MCAPStorage() override;
 
   /** BaseIOInterface **/
 #ifdef ROSBAG2_STORAGE_MCAP_HAS_STORAGE_OPTIONS
@@ -183,7 +182,7 @@ public:
   void set_filter(const rosbag2_storage::StorageFilter& storage_filter) override;
   void reset_filter() override;
 #ifdef ROSBAG2_STORAGE_MCAP_OVERRIDE_SEEK_METHOD
-  void seek(const rcutils_time_point_value_t& timestamp) override;
+  void seek(const rcutils_time_point_value_t& time_stamp) override;
 #else
   void seek(const rcutils_time_point_value_t& timestamp);
 #endif
@@ -211,11 +210,11 @@ private:
 
   std::shared_ptr<rosbag2_storage::SerializedBagMessage> next_;
 
-  rosbag2_storage::BagMetadata metadata_;
+  rosbag2_storage::BagMetadata metadata_{};
   std::unordered_map<std::string, rosbag2_storage::TopicInformation> topics_;
-  std::unordered_map<std::string, mcap::SchemaId> schema_ids;    // datatype -> schema_id
-  std::unordered_map<std::string, mcap::ChannelId> channel_ids;  // topic -> channel_id
-  rosbag2_storage::StorageFilter storage_filter_;
+  std::unordered_map<std::string, mcap::SchemaId> schema_ids_;    // datatype -> schema_id
+  std::unordered_map<std::string, mcap::ChannelId> channel_ids_;  // topic -> channel_id
+  rosbag2_storage::StorageFilter storage_filter_{};
   mcap::ReadMessageOptions::ReadOrder read_order_ =
     mcap::ReadMessageOptions::ReadOrder::LogTimeOrder;
 
@@ -226,7 +225,7 @@ private:
   std::unique_ptr<mcap::LinearMessageView::Iterator> linear_iterator_;
 
   std::unique_ptr<mcap::McapWriter> mcap_writer_;
-  rosbag2_storage_mcap::internal::MessageDefinitionCache msgdef_cache_;
+  rosbag2_storage_mcap::internal::MessageDefinitionCache msgdef_cache_{};
 
   bool has_read_summary_ = false;
 };
@@ -410,7 +409,7 @@ void MCAPStorage::reset_iterator(rcutils_time_point_value_t start_time) {
   mcap::ReadMessageOptions options;
   options.startTime = mcap::Timestamp(start_time);
   options.readOrder = read_order_;
-  if (storage_filter_.topics.size() > 0) {
+  if (!storage_filter_.topics.empty()) {
     options.topicFilter = [this](std::string_view topic) {
       for (const auto& match_topic : storage_filter_.topics) {
         if (match_topic == topic) {
@@ -421,7 +420,7 @@ void MCAPStorage::reset_iterator(rcutils_time_point_value_t start_time) {
     };
   }
 #ifdef ROSBAG2_STORAGE_MCAP_HAS_STORAGE_FILTER_TOPIC_REGEX
-  if (storage_filter_.topics_regex.size() > 0) {
+  if (!storage_filter_.topics_regex.empty()) {
     options.topicFilter = [this](std::string_view topic) {
       std::smatch m;
       std::string topic_string(topic);
@@ -513,62 +512,25 @@ void MCAPStorage::write(std::shared_ptr<const rosbag2_storage::SerializedBagMess
   if (topic_it == topics_.end()) {
     throw std::runtime_error{"Unknown message topic \"" + msg->topic_name + "\""};
   }
-  const auto& topic_info = topic_it->second;
 
-  // Get or create a Schema reference
-  mcap::SchemaId schema_id;
-  const auto& datatype = topic_info.topic_metadata.type;
-  const auto schema_it = schema_ids.find(datatype);
-  if (schema_it == schema_ids.end()) {
-    mcap::Schema schema;
-    schema.name = datatype;
-    try {
-      auto [format, full_text] = msgdef_cache_.get_full_text(datatype);
-      if (format == rosbag2_storage_mcap::internal::Format::MSG) {
-        schema.encoding = "ros2msg";
-      } else {
-        schema.encoding = "ros2idl";
-      }
-      schema.data.assign(reinterpret_cast<const std::byte*>(full_text.data()),
-                         reinterpret_cast<const std::byte*>(full_text.data() + full_text.size()));
-    } catch (rosbag2_storage_mcap::internal::DefinitionNotFoundError& err) {
-      RCUTILS_LOG_ERROR_NAMED("rosbag2_storage_mcap",
-                              "definition file(s) missing for %s: missing %s", datatype.c_str(),
-                              err.what());
-      schema.encoding = "";
-    }
-    mcap_writer_->addSchema(schema);
-    schema_ids.emplace(datatype, schema.id);
-    schema_id = schema.id;
-  } else {
-    schema_id = schema_it->second;
+  // Get Channel reference
+  const auto channel_it = channel_ids_.find(msg->topic_name);
+  if (channel_it == channel_ids_.end()) {
+    // This should never happen since we adding channel on topic creation
+    throw std::runtime_error{"Channel reference not found for topic: \"" + msg->topic_name + "\""};
   }
 
-  // Get or create a Channel reference
-  mcap::ChannelId channel_id;
-  const auto channel_it = channel_ids.find(msg->topic_name);
-  if (channel_it == channel_ids.end()) {
-    mcap::Channel channel;
-    channel.topic = msg->topic_name;
-    channel.messageEncoding = topic_info.topic_metadata.serialization_format;
-    channel.schemaId = schema_id;
-    channel.metadata.emplace("offered_qos_profiles",
-                             topic_info.topic_metadata.offered_qos_profiles);
-    mcap_writer_->addChannel(channel);
-    channel_ids.emplace(msg->topic_name, channel.id);
-    channel_id = channel.id;
-  } else {
-    channel_id = channel_it->second;
+  mcap::Message mcap_msg;
+  mcap_msg.channelId = channel_it->second;
+  mcap_msg.sequence = 0;
+  if (msg->time_stamp < 0) {
+    RCUTILS_LOG_WARN_NAMED(LOG_NAME, "Invalid message timestamp %ld", msg->time_stamp);
   }
-
-  mcap::Message mcapMsg;
-  mcapMsg.channelId = channel_id;
-  mcapMsg.sequence = 0;
-  mcapMsg.logTime = mcap::Timestamp(std::chrono::nanoseconds(msg->time_stamp).count());
-  mcapMsg.publishTime = mcapMsg.logTime;
-  mcapMsg.dataSize = msg->serialized_data->buffer_length;
-  mcapMsg.data = reinterpret_cast<const std::byte*>(msg->serialized_data->buffer);
-  const auto status = mcap_writer_->write(mcapMsg);
+  mcap_msg.logTime = mcap::Timestamp(msg->time_stamp);
+  mcap_msg.publishTime = mcap_msg.logTime;
+  mcap_msg.dataSize = msg->serialized_data->buffer_length;
+  mcap_msg.data = reinterpret_cast<const std::byte*>(msg->serialized_data->buffer);
+  const auto status = mcap_writer_->write(mcap_msg);
   if (!status.ok()) {
     throw std::runtime_error{std::string{"Failed to write "} +
                              std::to_string(msg->serialized_data->buffer_length) +
@@ -593,8 +555,54 @@ void MCAPStorage::write(
 }
 
 void MCAPStorage::create_topic(const rosbag2_storage::TopicMetadata& topic) {
-  if (topics_.find(topic.name) == topics_.end()) {
-    topics_.emplace(topic.name, rosbag2_storage::TopicInformation{topic, 0});
+  auto topic_info = rosbag2_storage::TopicInformation{topic, 0};
+  const auto topic_it = topics_.find(topic.name);
+  if (topic_it == topics_.end()) {
+    topics_.emplace(topic.name, topic_info);
+  } else {
+    RCUTILS_LOG_WARN_NAMED(LOG_NAME, "Topic with name: %s already exist!", topic.name.c_str());
+    return;
+  }
+
+  // Create Schema for topic if it doesn't exist yet
+  const auto& datatype = topic_info.topic_metadata.type;
+  const auto schema_it = schema_ids_.find(datatype);
+  mcap::SchemaId schema_id;
+  if (schema_it == schema_ids_.end()) {
+    mcap::Schema schema;
+    schema.name = datatype;
+    try {
+      auto [format, full_text] = msgdef_cache_.get_full_text(datatype);
+      if (format == rosbag2_storage_mcap::internal::Format::MSG) {
+        schema.encoding = "ros2msg";
+      } else {
+        schema.encoding = "ros2idl";
+      }
+      schema.data.assign(reinterpret_cast<const std::byte*>(full_text.data()),
+                         reinterpret_cast<const std::byte*>(full_text.data() + full_text.size()));
+    } catch (rosbag2_storage_mcap::internal::DefinitionNotFoundError& err) {
+      RCUTILS_LOG_ERROR_NAMED(LOG_NAME, "definition file(s) missing for %s: missing %s",
+                              datatype.c_str(), err.what());
+      schema.encoding = "";
+    }
+    mcap_writer_->addSchema(schema);
+    schema_ids_.emplace(datatype, schema.id);
+    schema_id = schema.id;
+  } else {
+    schema_id = schema_it->second;
+  }
+
+  // Create Channel for topic if it doesn't exist yet
+  const auto channel_it = channel_ids_.find(topic.name);
+  if (channel_it == channel_ids_.end()) {
+    mcap::Channel channel;
+    channel.topic = topic.name;
+    channel.messageEncoding = topic_info.topic_metadata.serialization_format;
+    channel.schemaId = schema_id;
+    channel.metadata.emplace("offered_qos_profiles",
+                             topic_info.topic_metadata.offered_qos_profiles);
+    mcap_writer_->addChannel(channel);
+    channel_ids_.emplace(topic.name, channel.id);
   }
 }
 

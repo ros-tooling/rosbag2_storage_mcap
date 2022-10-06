@@ -49,9 +49,10 @@ private:
   std::string name_;
 
 public:
-  explicit DefinitionNotFoundError(const std::string& name)
-      : name_(name) {}
-  const char* what() const throw() {
+  explicit DefinitionNotFoundError(std::string name)
+      : name_(std::move(name)) {}
+
+  const char* what() const noexcept override {
     return name_.c_str();
   }
 };

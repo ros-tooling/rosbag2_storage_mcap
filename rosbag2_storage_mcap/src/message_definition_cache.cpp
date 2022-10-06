@@ -67,7 +67,7 @@ static std::set<std::string> parse_idl_dependencies(const std::string& text) {
 
   for (std::sregex_iterator iter(text.begin(), text.end(), IDL_FIELD_TYPE_REGEX);
        iter != std::sregex_iterator(); ++iter) {
-    dependencies.insert(std::move((*iter)[1]));
+    dependencies.insert((*iter)[1]);
   }
   return dependencies;
 }
