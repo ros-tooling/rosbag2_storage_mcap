@@ -12,5 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#define MCAP_IMPLEMENTATION
 #include <mcap/mcap.hpp>
