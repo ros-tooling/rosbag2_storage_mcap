@@ -30,12 +30,24 @@ jobs:
 
     name: ROS 2 ${{ matrix.ros }}
     steps:
-      - name: Build and run tests
+      - run: |
+          echo "repositories: {}" > /tmp/deps.repos
+      - run: |
+          cat > /tmp/deps.repos <<EOF
+          repositories:
+            rosbag2:
+              type: git
+              url: https://github.com/ros2/rosbag2
+              version: rolling
+          EOF
+        if: ${{ matrix.ros == 'rolling' }}
+      - name: Build and test
         id: action-ros-ci
         uses: ros-tooling/action-ros-ci@v0.2
         with:
           package-name: rosbag2_storage_mcap
           target-ros2-distro: ${{ matrix.ros }}
+          vcs-repo-file-url: /tmp/deps.repos
       - uses: actions/upload-artifact@v1
         with:
           name: colcon-logs
