@@ -84,6 +84,8 @@ if(BUILD_TESTING)
   find_package(rosbag2_test_common REQUIRED)
   find_package(std_msgs REQUIRED)
 
+  add_definitions(-D_TEST_RESOURCES_DIR_PATH="${CMAKE_CURRENT_SOURCE_DIR}/test/${PROJECT_NAME}")
+
   set(ament_cmake_clang_format_CONFIG_FILE .clang-format)
   list(APPEND AMENT_LINT_AUTO_EXCLUDE ament_cmake_uncrustify)
   ament_lint_auto_find_test_dependencies()
