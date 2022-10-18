@@ -50,7 +50,7 @@ macro(build_mcap_vendor)
     "$<BUILD_INTERFACE:${_mcap_include_dir}>"
     "$<INSTALL_INTERFACE:include>"
   )
-  target_link_libraries(mcap PRIVATE zstd::zstd)
+  ament_target_dependencies(mcap zstd)
 
   install(
     DIRECTORY
@@ -66,6 +66,8 @@ endmacro()
 build_mcap_vendor()
 
 ament_export_targets(export_mcap HAS_LIBRARY_TARGET)
+
+ament_export_dependencies(zstd_vendor zstd)
 
 ## Tests
 if(BUILD_TESTING)
