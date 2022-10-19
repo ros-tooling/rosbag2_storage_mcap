@@ -13,6 +13,8 @@ endif()
 
 ## Dependencies
 find_package(ament_cmake REQUIRED)
+find_package(zstd_vendor REQUIRED)
+find_package(zstd REQUIRED)
 
 
 ## Define vendor macro
@@ -30,26 +32,12 @@ macro(build_mcap_vendor)
   )
   fetchcontent_makeavailable(lz4)
 
-  fetchcontent_declare(zstd
-    GIT_REPOSITORY https://github.com/facebook/zstd.git
-    GIT_TAG e47e674cd09583ff0503f0f6defd6d23d8b718d3 # v1.5.2
-  )
-  fetchcontent_makeavailable(zstd)
-
-  file(GLOB _zstd_srcs
-    ${zstd_SOURCE_DIR}/lib/common/*.c
-    ${zstd_SOURCE_DIR}/lib/compress/*.c
-    ${zstd_SOURCE_DIR}/lib/decompress/*.c
-    ${zstd_SOURCE_DIR}/lib/decompress/*.S
-  )
-
   file(GLOB _lz4_srcs
     ${lz4_SOURCE_DIR}/lib/*.c)
 
   add_library(
     mcap SHARED
     src/main.cpp
-    ${_zstd_srcs}
     ${_lz4_srcs}
   )
 
@@ -57,12 +45,12 @@ macro(build_mcap_vendor)
 
   target_include_directories(mcap SYSTEM PRIVATE
     ${lz4_SOURCE_DIR}/lib
-    ${zstd_SOURCE_DIR}/lib
   )
   target_include_directories(mcap SYSTEM PUBLIC
     "$<BUILD_INTERFACE:${_mcap_include_dir}>"
     "$<INSTALL_INTERFACE:include>"
   )
+  ament_target_dependencies(mcap zstd)
 
   install(
     DIRECTORY
@@ -78,6 +66,8 @@ endmacro()
 build_mcap_vendor()
 
 ament_export_targets(export_mcap HAS_LIBRARY_TARGET)
+
+ament_export_dependencies(zstd_vendor zstd)
 
 ## Tests
 if(BUILD_TESTING)
