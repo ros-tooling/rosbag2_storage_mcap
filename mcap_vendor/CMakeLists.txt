@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.5)
 project(mcap_vendor LANGUAGES C CXX ASM)
 
+## Dependencies
+find_package(ament_cmake REQUIRED)
+find_package(zstd_vendor REQUIRED)
+find_package(zstd REQUIRED)
+
 ## Compile options
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
@@ -10,12 +15,6 @@ endif()
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 endif()
-
-## Dependencies
-find_package(ament_cmake REQUIRED)
-find_package(zstd_vendor REQUIRED)
-find_package(zstd REQUIRED)
-
 
 ## Define vendor macro
 macro(build_mcap_vendor)
@@ -35,48 +34,37 @@ macro(build_mcap_vendor)
   file(GLOB _lz4_srcs
     ${lz4_SOURCE_DIR}/lib/*.c)
 
-  add_library(
-    mcap SHARED
+  add_library(${PROJECT_NAME} SHARED
     src/main.cpp
     ${_lz4_srcs}
   )
 
   set(_mcap_include_dir ${mcap_SOURCE_DIR}/cpp/mcap/include)
 
-  target_include_directories(mcap SYSTEM PRIVATE
+  target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
     ${lz4_SOURCE_DIR}/lib
   )
-  target_include_directories(mcap SYSTEM PUBLIC
+  target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC
     "$<BUILD_INTERFACE:${_mcap_include_dir}>"
     "$<INSTALL_INTERFACE:include>"
   )
-  ament_target_dependencies(mcap zstd)
+  ament_target_dependencies(${PROJECT_NAME} zstd)
 
   install(
-    DIRECTORY
-      ${_mcap_include_dir}/mcap
-    DESTINATION
-      ${CMAKE_INSTALL_PREFIX}/include
+    DIRECTORY ${_mcap_include_dir}/mcap
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/include
   )
 
-  install(TARGETS mcap EXPORT export_mcap)
+  install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME})
 endmacro()
 
 ## Call vendor macro
 build_mcap_vendor()
 
-ament_export_targets(export_mcap HAS_LIBRARY_TARGET)
-
+ament_export_include_directories(${_mcap_include_dir})
+ament_export_libraries(${PROJECT_NAME})
+ament_export_targets(${PROJECT_NAME}  HAS_LIBRARY_TARGET)
 ament_export_dependencies(zstd_vendor zstd)
-
-## Tests
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  list(APPEND AMENT_LINT_AUTO_EXCLUDE
-    ament_cmake_uncrustify
-  )
-  ament_lint_auto_find_test_dependencies()
-endif()
 
 ## Package
 ament_package()
