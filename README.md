@@ -32,11 +32,16 @@ $ ros2 bag info -s mcap path/to/your_recording.mcap
 
 ### Writer Configuration
 
-To configure details of the MCAP writer for `ros2 bag record`, use the `--storage-config-file` options to provide a YAML file describing `mcap::McapWriterOptions`. Field descriptions below copied from [McapWriterOptions declaration](https://github.com/foxglove/mcap/blob/main/cpp/mcap/include/mcap/writer.hpp#L18)
+To configure details of the MCAP writer for `ros2 bag record`, use the `--storage-config-file` options to provide a YAML file with the fields described below. Field descriptions below are mostly copied from [McapWriterOptions declaration](https://github.com/foxglove/mcap/blob/main/cpp/mcap/include/mcap/writer.hpp#L18), with some additional fields for controlling write buffering.
 
 | Field | Type / Values | Description |
 | ----- | ------------- | ----------- |
-| noCRC | bool | Disable CRC calculations for Chunks, Attachments, and the Data and Summary sections. |
+| bufferCapacity | unsigned int | the size of the write buffer in bytes. Defaults to 1kB. |
+| syncAfterWrite | bool | if true, the writer will sync all writes to the physical storage medium after each write. | if true, flush all data to disk after every McapStorage::write() call. **NOTE** This will cause many small chunks to be written, if using a chunk size smaller than the rosbag2 cache size. Any partial chunk still open at the end of a McapStorage::write() call is closed and written to the file early. To avoid this, set chunkSize to a larger value than your cache size. This ensures that each batch from rosbag2_transport gets written as its own chunk. |
+| bufferEntireBatch | bool | if true, `bufferCapacity` is ignored and the messages from each write() call are buffered together before writing them all at once. |
+| noChunkCRC | bool | Disable CRC calculations for Chunks. |
+| noAttachmentCRC | bool | Disable CRC calculations for Attachments. |
+| enableDataCRC | bool | Enable a CRC for the entire data section. This is useful for `noChunking: true`, but otherwise mostly redundant. |
 | noChunking | bool | Do write Chunks to the file, instead writing Schema, Channel, and Message records directly into the Data section. |
 | noMessageIndex | bool | Do not write Message Index records to the file. If `noSummary=true` and `noChunkIndex=false`, Chunk Index records will still be written to the Summary section, providing a coarse message index. |
 | noSummary | bool | Do not write Summary or Summary Offset sections to the file, placing the Footer record immediately after DataEnd. This can provide some speed boost to file writing and produce smaller files, at the expense of requiring a conversion process later if fast summarization or indexed access is desired. |

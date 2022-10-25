@@ -96,7 +96,7 @@ struct WriteBufferingOptions {
   /// chunk.
   bool syncAfterWrite = false;
   /// @brief  if true, bufferCapacity is ignored and the messages from each write() call are
-  //// buffered together before writing them all at once.
+  /// buffered together before writing them all at once.
   bool bufferEntireBatch = false;
 };
 
@@ -317,7 +317,6 @@ void MCAPStorage::open_impl(const std::string& uri,
       relative_path_ = uri + FILE_EXTENSION;
 
       mcap_writer_ = std::make_unique<mcap::McapWriter>();
-      buffered_writer_ = std::make_unique<rosbag2_storage_mcap::BufferedWriter>();
       McapWriterOptions mcap_writer_options;
       WriteBufferingOptions write_buffering_options;
       if (!storage_config_uri.empty()) {
