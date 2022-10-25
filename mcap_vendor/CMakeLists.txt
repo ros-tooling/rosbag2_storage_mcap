@@ -52,7 +52,7 @@ macro(build_mcap_vendor)
 
   install(
     DIRECTORY ${_mcap_include_dir}/mcap
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/include
+    DESTINATION include/${PROJECT_NAME}
   )
 
   install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME})
@@ -61,7 +61,7 @@ endmacro()
 ## Call vendor macro
 build_mcap_vendor()
 
-ament_export_include_directories(${_mcap_include_dir})
+ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(${PROJECT_NAME})
 ament_export_targets(${PROJECT_NAME}  HAS_LIBRARY_TARGET)
 ament_export_dependencies(zstd_vendor zstd)
