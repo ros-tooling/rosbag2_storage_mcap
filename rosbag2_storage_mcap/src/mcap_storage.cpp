@@ -113,7 +113,9 @@ template <>
 struct convert<McapWriterOptions> {
   // NOTE: when updating this struct, also update documentation in README.md
   static bool decode(const Node& node, McapWriterOptions& o) {
-    optional_assign<bool>(node, "noCRC", o.noCRC);
+    optional_assign<bool>(node, "noChunkCRC", o.noChunkCRC);
+    optional_assign<bool>(node, "noAttachmentCRC", o.noAttachmentCRC);
+    optional_assign<bool>(node, "enableDataCRC", o.enableDataCRC);
     optional_assign<bool>(node, "noChunking", o.noChunking);
     optional_assign<bool>(node, "noMessageIndex", o.noMessageIndex);
     optional_assign<bool>(node, "noSummary", o.noSummary);
