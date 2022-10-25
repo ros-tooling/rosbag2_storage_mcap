@@ -28,6 +28,7 @@ find_package(rosbag2_storage REQUIRED)
 add_library(${PROJECT_NAME} SHARED
   src/mcap_storage.cpp
   src/message_definition_cache.cpp
+  src/buffered_writer.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

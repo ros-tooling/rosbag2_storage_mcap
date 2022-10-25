@@ -17,6 +17,7 @@
 #include "rosbag2_storage/ros_helper.hpp"
 #include "rosbag2_storage/storage_interfaces/read_write_interface.hpp"
 #include "rosbag2_storage_mcap/message_definition_cache.hpp"
+#include "rosbag2_storage_mcap/buffered_writer.hpp"
 
 #ifdef ROSBAG2_STORAGE_MCAP_HAS_YAML_HPP
 #include "rosbag2_storage/yaml.hpp"
@@ -84,6 +85,21 @@ struct McapWriterOptions : mcap::McapWriterOptions {
       : mcap::McapWriterOptions("ros2") {}
 };
 
+struct WriteBufferingOptions {
+  /// @brief  sets the size of the write buffer in bytes.
+  size_t bufferCapacity = 1024;
+  /// @brief  if true, flush all data to disk after every McapStorage::write() call.
+  /// NOTE: This will cause many small chunks to be written, if using a chunk size smaller than
+  /// the rosbag2 cache size. Any partial chunk still open at the end of a McapStorage::write() call
+  /// is closed and written to the file early. To avoid this, set chunkSize to a larger value than
+  /// your cache size. This ensures that each batch from rosbag2_transport gets written as its own
+  /// chunk.
+  bool syncAfterWrite = false;
+  /// @brief  if true, bufferCapacity is ignored and the messages from each write() call are
+  //// buffered together before writing them all at once.
+  bool bufferEntireBatch = false;
+};
+
 }  // namespace
 
 namespace YAML {
@@ -131,6 +147,16 @@ struct convert<McapWriterOptions> {
     optional_assign<bool>(node, "noChunkIndex", o.noChunkIndex);
     optional_assign<bool>(node, "noStatistics", o.noStatistics);
     optional_assign<bool>(node, "noSummaryOffsets", o.noSummaryOffsets);
+    return true;
+  }
+};
+
+template <>
+struct convert<WriteBufferingOptions> {
+  static bool decode(const Node& node, WriteBufferingOptions& o) {
+    optional_assign<size_t>(node, "bufferCapacity", o.bufferCapacity);
+    optional_assign<bool>(node, "syncAfterWrite", o.syncAfterWrite);
+    optional_assign<bool>(node, "bufferEntireBatch", o.bufferEntireBatch);
     return true;
   }
 };
@@ -230,9 +256,12 @@ private:
   std::unique_ptr<mcap::LinearMessageView::Iterator> linear_iterator_;
 
   std::unique_ptr<mcap::McapWriter> mcap_writer_;
+  std::unique_ptr<rosbag2_storage_mcap::BufferedWriter> buffered_writer_;
   rosbag2_storage_mcap::internal::MessageDefinitionCache msgdef_cache_{};
 
   bool has_read_summary_ = false;
+  bool flush_after_write_ = false;
+  bool sync_after_write_ = false;
 };
 
 MCAPStorage::MCAPStorage() {
@@ -288,16 +317,26 @@ void MCAPStorage::open_impl(const std::string& uri,
       relative_path_ = uri + FILE_EXTENSION;
 
       mcap_writer_ = std::make_unique<mcap::McapWriter>();
-      McapWriterOptions options;
+      McapWriterOptions mcap_writer_options;
+      WriteBufferingOptions write_buffering_options;
       if (!storage_config_uri.empty()) {
         YAML::Node yaml_node = YAML::LoadFile(storage_config_uri);
-        options = yaml_node.as<McapWriterOptions>();
+        mcap_writer_options = yaml_node.as<McapWriterOptions>();
+        write_buffering_options = yaml_node.as<WriteBufferingOptions>();
+      }
+      sync_after_write_ = write_buffering_options.syncAfterWrite;
+      flush_after_write_ = write_buffering_options.bufferEntireBatch;
+      if (write_buffering_options.bufferEntireBatch) {
+        buffered_writer_->open(relative_path_, std::nullopt);
+      } else {
+        bool success = buffered_writer_->open(relative_path_,
+                                              write_buffering_options.bufferCapacity);
+        if (!success) {
+          throw std::runtime_error("could not open file");
+        }
       }
 
-      auto status = mcap_writer_->open(relative_path_, options);
-      if (!status.ok()) {
-        throw std::runtime_error(status.message);
-      }
+      mcap_writer_->open(*buffered_writer_, mcap_writer_options);
       break;
     }
   }
@@ -569,6 +608,13 @@ void MCAPStorage::write(std::shared_ptr<const rosbag2_storage::SerializedBagMess
     throw std::runtime_error{std::string{"Failed to write "} +
                              std::to_string(msg->serialized_data->buffer_length) +
                              " byte message to MCAP file: " + status.message};
+  }
+  if (sync_after_write_ && !buffered_writer_->syncToDisk()) {
+    throw std::runtime_error("sync failed");
+  }
+  if (flush_after_write_) {
+    mcap_writer_->closeLastChunk();
+    buffered_writer_->flush();
   }
 
   /// Update metadata
