@@ -1,9 +1,0 @@
-#include "rosbag2_storage_mcap_test_fixture_interfaces/msg/BasicIdl.idl"
-
-module rosbag2_storage_mcap_test_fixture_interfaces {
-  module msg {
-    struct ComplexIdl {
-      rosbag2_storage_mcap_test_fixture_interfaces::msg::BasicIdl a;
-    };
-  };
-};

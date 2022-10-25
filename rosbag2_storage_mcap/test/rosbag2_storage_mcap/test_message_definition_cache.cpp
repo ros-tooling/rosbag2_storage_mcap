@@ -25,61 +25,58 @@ using ::testing::UnorderedElementsAre;
 
 TEST(test_message_definition_cache, can_find_idl_includes) {
   const char sample[] = R"r(
-#include "rosbag2_storage_mcap_test_fixture_interfaces/msg/BasicIdlA.idl"
+#include "rosbag2_storage_mcap_testdata/msg/BasicIdlA.idl"
 
-#include <rosbag2_storage_mcap_test_fixture_interfaces/msg/BasicIdlB.idl>
+#include <rosbag2_storage_mcap_testdata/msg/BasicIdlB.idl>
 
-module rosbag2_storage_mcap_test_fixture_interfaces {
+module rosbag2_storage_mcap_testdata {
   module msg {
     struct ComplexIdl {
-      rosbag2_storage_mcap_test_fixture_interfaces::msg::BasicIdlA a;
-      rosbag2_storage_mcap_test_fixture_interfaces::msg::BasicIdlB b;
+      rosbag2_storage_mcap_testdata::msg::BasicIdlA a;
+      rosbag2_storage_mcap_testdata::msg::BasicIdlB b;
     };
   };
 };
 
 )r";
   std::set<std::string> dependencies = parse_dependencies(Format::IDL, sample, "");
-  ASSERT_THAT(dependencies,
-              UnorderedElementsAre("rosbag2_storage_mcap_test_fixture_interfaces/msg/BasicIdlA",
-                                   "rosbag2_storage_mcap_test_fixture_interfaces/msg/BasicIdlB"));
+  ASSERT_THAT(dependencies, UnorderedElementsAre("rosbag2_storage_mcap_testdata/msg/BasicIdlA",
+                                                 "rosbag2_storage_mcap_testdata/msg/BasicIdlB"));
 }
 
 TEST(test_message_definition_cache, can_find_msg_deps) {
   MessageDefinitionCache cache;
-  auto [format, content] =
-    cache.get_full_text("rosbag2_storage_mcap_test_fixture_interfaces/ComplexMsg");
+  auto [format, content] = cache.get_full_text("rosbag2_storage_mcap_testdata/ComplexMsg");
   ASSERT_EQ(format, Format::MSG);
   ASSERT_EQ(content,
-            R"r(rosbag2_storage_mcap_test_fixture_interfaces/BasicMsg b
+            R"r(rosbag2_storage_mcap_testdata/BasicMsg b
 
 ================================================================================
-MSG: rosbag2_storage_mcap_test_fixture_interfaces/BasicMsg
+MSG: rosbag2_storage_mcap_testdata/BasicMsg
 float32 c
 )r");
 }
 
 TEST(test_message_definition_cache, can_find_idl_deps) {
   MessageDefinitionCache cache;
-  auto [format, content] =
-    cache.get_full_text("rosbag2_storage_mcap_test_fixture_interfaces/msg/ComplexIdl");
+  auto [format, content] = cache.get_full_text("rosbag2_storage_mcap_testdata/msg/ComplexIdl");
   EXPECT_EQ(format, Format::IDL);
   EXPECT_EQ(content,
             R"r(================================================================================
-IDL: rosbag2_storage_mcap_test_fixture_interfaces/msg/ComplexIdl
-#include "rosbag2_storage_mcap_test_fixture_interfaces/msg/BasicIdl.idl"
+IDL: rosbag2_storage_mcap_testdata/msg/ComplexIdl
+#include "rosbag2_storage_mcap_testdata/msg/BasicIdl.idl"
 
-module rosbag2_storage_mcap_test_fixture_interfaces {
+module rosbag2_storage_mcap_testdata {
   module msg {
     struct ComplexIdl {
-      rosbag2_storage_mcap_test_fixture_interfaces::msg::BasicIdl a;
+      rosbag2_storage_mcap_testdata::msg::BasicIdl a;
     };
   };
 };
 
 ================================================================================
-IDL: rosbag2_storage_mcap_test_fixture_interfaces/msg/BasicIdl
-module rosbag2_storage_mcap_test_fixture_interfaces {
+IDL: rosbag2_storage_mcap_testdata/msg/BasicIdl
+module rosbag2_storage_mcap_testdata {
   module msg {
     struct BasicIdl {
         float x;
@@ -92,28 +89,28 @@ module rosbag2_storage_mcap_test_fixture_interfaces {
 TEST(test_message_definition_cache, can_resolve_msg_with_idl_deps) {
   MessageDefinitionCache cache;
   auto [format, content] =
-    cache.get_full_text("rosbag2_storage_mcap_test_fixture_interfaces/msg/ComplexMsgDependsOnIdl");
+    cache.get_full_text("rosbag2_storage_mcap_testdata/msg/ComplexMsgDependsOnIdl");
   EXPECT_EQ(format, Format::IDL);
   EXPECT_EQ(content,
             R"r(================================================================================
-IDL: rosbag2_storage_mcap_test_fixture_interfaces/msg/ComplexMsgDependsOnIdl
+IDL: rosbag2_storage_mcap_testdata/msg/ComplexMsgDependsOnIdl
 // generated from rosidl_adapter/resource/msg.idl.em
-// with input from rosbag2_storage_mcap_test_fixture_interfaces/msg/ComplexMsgDependsOnIdl.msg
+// with input from rosbag2_storage_mcap_testdata/msg/ComplexMsgDependsOnIdl.msg
 // generated code does not contain a copyright notice
 
-#include "rosbag2_storage_mcap_test_fixture_interfaces/msg/BasicIdl.idl"
+#include "rosbag2_storage_mcap_testdata/msg/BasicIdl.idl"
 
-module rosbag2_storage_mcap_test_fixture_interfaces {
+module rosbag2_storage_mcap_testdata {
   module msg {
     struct ComplexMsgDependsOnIdl {
-      rosbag2_storage_mcap_test_fixture_interfaces::msg::BasicIdl a;
+      rosbag2_storage_mcap_testdata::msg::BasicIdl a;
     };
   };
 };
 
 ================================================================================
-IDL: rosbag2_storage_mcap_test_fixture_interfaces/msg/BasicIdl
-module rosbag2_storage_mcap_test_fixture_interfaces {
+IDL: rosbag2_storage_mcap_testdata/msg/BasicIdl
+module rosbag2_storage_mcap_testdata {
   module msg {
     struct BasicIdl {
         float x;

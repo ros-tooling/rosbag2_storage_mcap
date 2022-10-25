@@ -1,4 +1,4 @@
-module rosbag2_storage_mcap_test_fixture_interfaces {
+module rosbag2_storage_mcap_testdata {
   module msg {
     struct BasicIdl {
         float x;
