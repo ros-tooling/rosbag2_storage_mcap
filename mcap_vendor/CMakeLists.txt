@@ -68,7 +68,6 @@ endmacro()
 build_mcap_vendor()
 
 ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(mcap)
 ament_export_targets(mcap  HAS_LIBRARY_TARGET)
 ament_export_dependencies(zstd_vendor zstd)
 
