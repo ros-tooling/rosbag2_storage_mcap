@@ -55,7 +55,13 @@ macro(build_mcap_vendor)
     DESTINATION include/${PROJECT_NAME}
   )
 
-  install(TARGETS mcap EXPORT mcap)
+  install(
+    TARGETS mcap
+    EXPORT mcap
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+  )
 endmacro()
 
 ## Call vendor macro
