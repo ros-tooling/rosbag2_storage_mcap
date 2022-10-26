@@ -34,36 +34,36 @@ macro(build_mcap_vendor)
   file(GLOB _lz4_srcs
     ${lz4_SOURCE_DIR}/lib/*.c)
 
-  add_library(${PROJECT_NAME} SHARED
+  add_library(mcap SHARED
     src/main.cpp
     ${_lz4_srcs}
   )
 
   set(_mcap_include_dir ${mcap_SOURCE_DIR}/cpp/mcap/include)
 
-  target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
+  target_include_directories(mcap PRIVATE
     ${lz4_SOURCE_DIR}/lib
   )
-  target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC
+  target_include_directories(mcap PUBLIC
     "$<BUILD_INTERFACE:${_mcap_include_dir}>"
-    "$<INSTALL_INTERFACE:include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
   )
-  ament_target_dependencies(${PROJECT_NAME} zstd)
+  ament_target_dependencies(mcap zstd)
 
   install(
     DIRECTORY ${_mcap_include_dir}/mcap
     DESTINATION include/${PROJECT_NAME}
   )
 
-  install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME})
+  install(TARGETS mcap EXPORT mcap)
 endmacro()
 
 ## Call vendor macro
 build_mcap_vendor()
 
 ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(${PROJECT_NAME})
-ament_export_targets(${PROJECT_NAME}  HAS_LIBRARY_TARGET)
+ament_export_libraries(mcap)
+ament_export_targets(mcap  HAS_LIBRARY_TARGET)
 ament_export_dependencies(zstd_vendor zstd)
 
 ## Package

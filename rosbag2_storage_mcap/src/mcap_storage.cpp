@@ -36,7 +36,7 @@
 #endif
 #endif
 
-#include <mcap_vendor/mcap/mcap.hpp>
+#include <mcap/mcap.hpp>
 
 #include <algorithm>
 #include <filesystem>
