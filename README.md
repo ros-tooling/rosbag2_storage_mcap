@@ -36,7 +36,10 @@ To configure details of the MCAP writer for `ros2 bag record`, use the `--storag
 
 | Field | Type / Values | Description |
 | ----- | ------------- | ----------- |
-| noCRC | bool | Disable CRC calculations for Chunks, Attachments, and the Data and Summary sections. |
+| noChunkCRC | bool | Disable CRC calculation for Chunks. Ignored if `noChunking=true`. |
+| noAttachmentCRC | bool | Disable CRC calculation for Attachments. |
+| enableDataCRC | bool | Enables CRC calculation for the entire Data section. Useful when `noChunking=True`. |
+| noSummaryCRC | bool | Disable CRC calculation for the Summary section. |
 | noChunking | bool | Do write Chunks to the file, instead writing Schema, Channel, and Message records directly into the Data section. |
 | noMessageIndex | bool | Do not write Message Index records to the file. If `noSummary=true` and `noChunkIndex=false`, Chunk Index records will still be written to the Summary section, providing a coarse message index. |
 | noSummary | bool | Do not write Summary or Summary Offset sections to the file, placing the Footer record immediately after DataEnd. This can provide some speed boost to file writing and produce smaller files, at the expense of requiring a conversion process later if fast summarization or indexed access is desired. |
@@ -56,7 +59,7 @@ Example:
 
 ```
 # mcap_writer_options.yml
-noCRC: false
+noChunkCRC: false
 noChunking: false
 noMessageIndex: false
 noSummary: false
@@ -70,6 +73,68 @@ forceCompression: false
 $ ros2 bag record -s mcap -o my_bag --all --storage-config-file mcap_writer_options.yml
 ```
 
+### Storage Preset Profiles
+
+You can also use one of the preset profiles described below, for example:
+
+```
+$ ros2 bag record -s mcap -o my_bag --all --storage-preset-profile fastwrite
+```
+
+#### `fastwrite`
+
+Configures the MCAP writer for the highest possible write throughput and lowest resource utilization. This preset does not calculate CRCs for integrity checking, and does not write a message index. This preset profile is useful for resource-constrained robots.
+
+Equivalent to this storage configuration:
+```yaml
+noChunking: true
+noSummaryCRC: true
+```
+
+Using MCAPs written with `fastwrite` as a long-term storage format is not recommended. Some features will not work when reading MCAP files without a message index, such as reading messages from a subset of topics or seeking. When recording MCAPs on your robot with `fastwrite`, it is a good idea to post-process these files afterwards, to restore the message index and also save storage space:
+
+```bash
+# Using the MCAP CLI https://github.com/foxglove/mcap/tree/main/go/cli/mcap
+$ mcap compress fast.mcap -o compressed.mcap
+# Using `ros2 bag convert`
+$ cat << EOF > convert.yaml
+output_bags:
+  - uri: compressed
+    storage_id: mcap
+    storage_preset_profile: zstd_small
+EOF
+$ ros2 bag convert -i fast.mcap -o convert.yaml
+```
+
+Equivalent to this storage configuration:
+```yaml
+noChunking: true
+noSummaryCRC: true
+```
+
+#### `zstd_fast`
+
+Configures the MCAP writer to use chunk compression with [zstd](http://facebook.github.io/zstd/). Chunk compression yields file sizes comparable to bags compressed with file-level compression, but allows tools to efficiently read messages without decompressing the entire bag. This preset uses the lowest compression ratio and disables CRC calculation, to achieve high throughput while conserving disk space.
+
+Equivalent to this storage configuration:
+
+```yaml
+compression: "Zstd"
+compressionLevel: "Fastest"
+noChunkCRC: true
+```
+
+#### `zstd_small`
+
+Configures the MCAP writer to write 4MB chunks, compressed with zstd using its highest compression ratio. This produces very small bags, but can be resource-intensive to write. This preset also calculates chunk CRCs, which allow a reader to determine if a chunk is corrupted. This preset is useful when using `ros2 bag convert` as a post-processing step.
+
+Equivalent to this storage configuration:
+
+```yaml
+compression: "Zstd"
+compressionLevel: "Slowest"
+chunkSize: 4194304 # 4 * 1024 * 1024
+```
 
 ## Development
 
