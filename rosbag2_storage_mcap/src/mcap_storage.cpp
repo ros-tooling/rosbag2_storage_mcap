@@ -312,6 +312,9 @@ void MCAPStorage::open_impl(const std::string& uri, const std::string& preset_pr
 
       mcap_writer_ = std::make_unique<mcap::McapWriter>();
       McapWriterOptions options;
+      // Set defaults for the rosbag2 storage plugin specifically.
+      options.noChunkCRC = true;
+      options.compression = mcap::Compression::None;
       // Set options from preset profile first
       if (!preset_profile.empty()) {
         SetOptionsForPreset(preset_profile, options);
