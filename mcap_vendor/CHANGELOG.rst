@@ -2,6 +2,13 @@
 Changelog for package mcap_vendor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.0 (2022-11-02)
+------------------
+* mcap_vendor: update to v0.6.0 (`#69 <https://github.com/ros-tooling/rosbag2_storage_mcap/issues/69>`_)
+* Cleanup in `mcap_vendor` package (`#62 <https://github.com/ros-tooling/rosbag2_storage_mcap/issues/62>`_)
+* Switch to using the vendored zstd library. (`#59 <https://github.com/ros-tooling/rosbag2_storage_mcap/issues/59>`_)
+* Contributors: Chris Lalancette, Michael Orlov, James Smith
+
 0.4.0 (2022-10-06)
 ------------------
 
