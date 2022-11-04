@@ -40,7 +40,7 @@ To configure details of the MCAP writer for `ros2 bag record`, use the `--storag
 | noAttachmentCRC | bool | Disable CRC calculation for Attachments. |
 | enableDataCRC | bool | Enables CRC calculation for the entire Data section. Useful when `noChunking=True`. |
 | noSummaryCRC | bool | Disable CRC calculation for the Summary section. |
-| noChunking | bool | Do write Chunks to the file, instead writing Schema, Channel, and Message records directly into the Data section. |
+| noChunking | bool | Do not write Chunks to the file, instead writing Schema, Channel, and Message records directly into the Data section. |
 | noMessageIndex | bool | Do not write Message Index records to the file. If `noSummary=true` and `noChunkIndex=false`, Chunk Index records will still be written to the Summary section, providing a coarse message index. |
 | noSummary | bool | Do not write Summary or Summary Offset sections to the file, placing the Footer record immediately after DataEnd. This can provide some speed boost to file writing and produce smaller files, at the expense of requiring a conversion process later if fast summarization or indexed access is desired. |
 | chunkSize | unsigned int | Target uncompressed Chunk payload size in bytes. Once a Chunk's uncompressed data meets or exceeds this size, the Chunk will be compressed (if compression is enabled) and written to disk. Note that smaller Chunks may be written, such as the last Chunk in the Data section. This option is ignored if `noChunking=true`. |
