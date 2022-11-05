@@ -34,6 +34,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
 target_compile_features(${PROJECT_NAME} PUBLIC c_std_99 cxx_std_17)
+target_compile_definitions(${PROJECT_NAME} PRIVATE "ROSBAG2_STORAGE_MCAP_BUILDING_DLL")
 ament_target_dependencies(${PROJECT_NAME}
   mcap_vendor
   pluginlib
@@ -88,6 +89,10 @@ if(BUILD_TESTING)
 
   set(ament_cmake_clang_format_CONFIG_FILE .clang-format)
   list(APPEND AMENT_LINT_AUTO_EXCLUDE ament_cmake_uncrustify)
+  if(WIN32)
+    # clang-format is not easily exposed to Windows, this linter enforced regardless via Linux/OSX builds
+    list(APPEND AMENT_LINT_AUTO_EXCLUDE ament_cmake_clang_format)
+  endif()
   ament_lint_auto_find_test_dependencies()
 
   ament_add_gmock(test_mcap_storage test/rosbag2_storage_mcap/test_mcap_storage.cpp)

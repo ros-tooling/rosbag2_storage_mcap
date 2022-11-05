@@ -20,6 +20,7 @@
 #include <rcutils/logging_macros.h>
 
 #include <fstream>
+#include <functional>
 #include <optional>
 #include <regex>
 #include <set>

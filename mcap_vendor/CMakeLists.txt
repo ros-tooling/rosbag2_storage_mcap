@@ -21,7 +21,8 @@ macro(build_mcap_vendor)
   include(FetchContent)
   fetchcontent_declare(mcap
     GIT_REPOSITORY https://github.com/foxglove/mcap.git
-    GIT_TAG 066f03b9b8444ffc1134e852e3419e4a4c0bef85 # releases/cpp/v0.6.0
+    # GIT_TAG 066f03b9b8444ffc1134e852e3419e4a4c0bef85 # releases/cpp/v0.6.0
+    GIT_TAG windows-build # releases
   )
   fetchcontent_makeavailable(mcap)
 
@@ -38,6 +39,9 @@ macro(build_mcap_vendor)
     src/main.cpp
     ${_lz4_srcs}
   )
+  # Causes the visibility macros to use dllexport rather than dllimport,
+  # which is appropriate when building the dll but not consuming it.
+  target_compile_definitions(mcap PRIVATE "MCAP_BUILDING_DLL")
 
   set(_mcap_include_dir ${mcap_SOURCE_DIR}/cpp/mcap/include)
 
