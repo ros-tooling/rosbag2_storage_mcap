@@ -15,6 +15,12 @@ endif()
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 endif()
+if (MSVC)
+  add_compile_options(/W4 /WX
+    # suppress warning about having template instances (such as std::string) as public class members
+    /wd4251
+  )
+endif()
 
 ## Define vendor macro
 macro(build_mcap_vendor)
@@ -34,14 +40,10 @@ macro(build_mcap_vendor)
 
   file(GLOB _lz4_srcs
     ${lz4_SOURCE_DIR}/lib/*.c)
-
   add_library(mcap SHARED
     src/main.cpp
     ${_lz4_srcs}
   )
-  # Causes the visibility macros to use dllexport rather than dllimport,
-  # which is appropriate when building the dll but not consuming it.
-  target_compile_definitions(mcap PRIVATE "MCAP_BUILDING_DLL")
 
   set(_mcap_include_dir ${mcap_SOURCE_DIR}/cpp/mcap/include)
 
