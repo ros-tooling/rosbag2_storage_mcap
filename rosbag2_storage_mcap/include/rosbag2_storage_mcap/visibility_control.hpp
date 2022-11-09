@@ -36,19 +36,14 @@
   #else
     #define ROSBAG2_STORAGE_MCAP_PUBLIC ROSBAG2_STORAGE_MCAP_IMPORT
   #endif
-  #define ROSBAG2_STORAGE_MCAP_PUBLIC_TYPE ROSBAG2_STORAGE_MCAP_PUBLIC
-  #define ROSBAG2_STORAGE_MCAP_LOCAL
 #else
   #define ROSBAG2_STORAGE_MCAP_EXPORT __attribute__((visibility("default")))
   #define ROSBAG2_STORAGE_MCAP_IMPORT
   #if __GNUC__ >= 4
     #define ROSBAG2_STORAGE_MCAP_PUBLIC __attribute__((visibility("default")))
-    #define ROSBAG2_STORAGE_MCAP_LOCAL __attribute__((visibility("hidden")))
   #else
     #define ROSBAG2_STORAGE_MCAP_PUBLIC
-    #define ROSBAG2_STORAGE_MCAP_LOCAL
   #endif
-  #define ROSBAG2_STORAGE_MCAP_PUBLIC_TYPE
 #endif
 
 #endif  // ROSBAG2_STORAGE_MCAP__VISIBILITY_CONTROL_HPP_
