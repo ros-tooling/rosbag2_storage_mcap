@@ -17,8 +17,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 if (MSVC)
   add_compile_options(/W4 /WX
-    # suppress warning about having template instances (such as std::string) as public class members
-    /wd4251
+    /wd4251 # suppress warning about having template instances (such as std::string) as public class members
   )
 endif()
 
@@ -27,8 +26,7 @@ macro(build_mcap_vendor)
   include(FetchContent)
   fetchcontent_declare(mcap
     GIT_REPOSITORY https://github.com/foxglove/mcap.git
-    # GIT_TAG 066f03b9b8444ffc1134e852e3419e4a4c0bef85 # releases/cpp/v0.6.0
-    GIT_TAG windows-build # releases
+    GIT_TAG dc6561d9ba867901709e36526dcf7f7359861e9c # releases/cpp/v0.7.0
   )
   fetchcontent_makeavailable(mcap)
 
@@ -40,6 +38,7 @@ macro(build_mcap_vendor)
 
   file(GLOB _lz4_srcs
     ${lz4_SOURCE_DIR}/lib/*.c)
+
   add_library(mcap SHARED
     src/main.cpp
     ${_lz4_srcs}
