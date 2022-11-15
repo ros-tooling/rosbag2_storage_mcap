@@ -19,6 +19,8 @@ if (MSVC)
   add_compile_options(/W4 /WX
     /wd4251 # suppress warning about having template instances (such as std::string) as public class members
   )
+  # suppress error disallowing `fopen` in favor of `fopen_s`
+  add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 endif()
 
 ## Define vendor macro
