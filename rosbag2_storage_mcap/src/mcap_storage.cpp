@@ -19,21 +19,21 @@
 #include "rosbag2_storage_mcap/message_definition_cache.hpp"
 
 #ifdef ROSBAG2_STORAGE_MCAP_HAS_YAML_HPP
-#include "rosbag2_storage/yaml.hpp"
+  #include "rosbag2_storage/yaml.hpp"
 #else
-// COMPATIBILITY(foxy, galactic) - this block is available in rosbag2_storage/yaml.hpp in H
-#ifdef _WIN32
-// This is necessary because of a bug in yaml-cpp's cmake
-#define YAML_CPP_DLL
-// This is necessary because yaml-cpp does not always use dllimport/dllexport consistently
-#pragma warning(push)
-#pragma warning(disable : 4251)
-#pragma warning(disable : 4275)
-#endif
-#include "yaml-cpp/yaml.h"
-#ifdef _WIN32
-#pragma warning(pop)
-#endif
+  // COMPATIBILITY(foxy, galactic) - this block is available in rosbag2_storage/yaml.hpp in H
+  #ifdef _WIN32
+    // This is necessary because of a bug in yaml-cpp's cmake
+    #define YAML_CPP_DLL
+    // This is necessary because yaml-cpp does not always use dllimport/dllexport consistently
+    #pragma warning(push)
+    #pragma warning(disable : 4251)
+    #pragma warning(disable : 4275)
+  #endif
+  #include "yaml-cpp/yaml.h"
+  #ifdef _WIN32
+    #pragma warning(pop)
+  #endif
 #endif
 
 #include <mcap/mcap.hpp>
@@ -47,7 +47,7 @@
 #include <utility>
 #include <vector>
 #ifdef ROSBAG2_STORAGE_MCAP_HAS_STORAGE_FILTER_TOPIC_REGEX
-#include <regex>
+  #include <regex>
 #endif
 
 #define DECLARE_YAML_VALUE_MAP(KEY_TYPE, VALUE_TYPE, ...)                   \

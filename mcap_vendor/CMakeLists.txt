@@ -15,13 +15,20 @@ endif()
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 endif()
+if (MSVC)
+  add_compile_options(/W4 /WX
+    /wd4251 # suppress warning about having template instances (such as std::string) as public class members
+  )
+  # suppress error disallowing `fopen` in favor of `fopen_s`
+  add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+endif()
 
 ## Define vendor macro
 macro(build_mcap_vendor)
   include(FetchContent)
   fetchcontent_declare(mcap
     GIT_REPOSITORY https://github.com/foxglove/mcap.git
-    GIT_TAG 066f03b9b8444ffc1134e852e3419e4a4c0bef85 # releases/cpp/v0.6.0
+    GIT_TAG dc6561d9ba867901709e36526dcf7f7359861e9c # releases/cpp/v0.7.0
   )
   fetchcontent_makeavailable(mcap)
 

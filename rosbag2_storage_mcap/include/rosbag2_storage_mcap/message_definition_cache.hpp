@@ -15,6 +15,8 @@
 #ifndef ROSBAG2_STORAGE_MCAP__MESSAGE_DEFINITION_CACHE_HPP_
 #define ROSBAG2_STORAGE_MCAP__MESSAGE_DEFINITION_CACHE_HPP_
 
+#include "visibility_control.hpp"
+
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -67,6 +69,7 @@ public:
    * Throws DefinitionNotFoundError if one or more definition files are missing for the given
    * package resource name.
    */
+  ROSBAG2_STORAGE_MCAP_PUBLIC
   std::pair<Format, std::string> get_full_text(const std::string& package_resource_name);
 
 private:
@@ -87,6 +90,7 @@ private:
     msg_specs_by_definition_identifier_;
 };
 
+ROSBAG2_STORAGE_MCAP_PUBLIC
 std::set<std::string> parse_dependencies(Format format, const std::string& text,
                                          const std::string& package_context);
 

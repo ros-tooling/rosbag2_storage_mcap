@@ -20,10 +20,10 @@
 #include "rosbag2_cpp/writer.hpp"
 #include "rosbag2_cpp/writers/sequential_writer.hpp"
 #ifdef ROSBAG2_STORAGE_MCAP_HAS_STORAGE_OPTIONS
-#include "rosbag2_storage/storage_options.hpp"
+  #include "rosbag2_storage/storage_options.hpp"
 using StorageOptions = rosbag2_storage::StorageOptions;
 #else
-#include "rosbag2_cpp/storage_options.hpp"
+  #include "rosbag2_cpp/storage_options.hpp"
 using StorageOptions = rosbag2_cpp::StorageOptions;
 #endif
 #include "rosbag2_test_common/temporary_directory_fixture.hpp"
@@ -128,9 +128,9 @@ TEST_F(TemporaryDirectoryFixture, can_write_mcap_with_zstd_configured_from_yaml)
     msg.data = message_data;
 
     rosbag2_cpp::Writer writer{std::make_unique<rosbag2_cpp::writers::SequentialWriter>()};
-#ifndef ROSBAG2_STORAGE_MCAP_WRITER_CREATES_DIRECTORY
+  #ifndef ROSBAG2_STORAGE_MCAP_WRITER_CREATES_DIRECTORY
     rcpputils::fs::create_directories(uri);
-#endif
+  #endif
     writer.open(options, rosbag2_cpp::ConverterOptions{});
     writer.create_topic(topic_metadata);
 
