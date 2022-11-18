@@ -27,6 +27,7 @@
 #include <string>
 #include <unordered_set>
 #include <utility>
+#include <filesystem>
 
 namespace rosbag2_storage_mcap::internal {
 
@@ -133,12 +134,22 @@ const MessageSpec& MessageDefinitionCache::load_message_spec(
   }
   std::string package = match[1];
   std::string share_dir = ament_index_cpp::get_package_share_directory(package);
-  std::ifstream file{share_dir + "/msg/" + match[2].str() +
-                     extension_for_format(definition_identifier.format)};
-  if (!file.good()) {
+  std::string target_file_name = match[2].str() + extension_for_format(definition_identifier.format);
+  std::string target_file_path; 
+  // Recursively search install path for required file
+  // Depending on user setup, all .msg files could be present in <package_name>/msg/*.msg or <package_name>/<custom_name>/*.msg 
+  for (auto& file : std::filesystem::recursive_directory_iterator(share_dir)) {
+      std::string found_file_name = file.path().filename();
+      if (found_file_name == target_file_name) {
+        target_file_path = file.path().string();
+        break;
+      }
+  }
+  if (target_file_path.empty()) {
     throw DefinitionNotFoundError(definition_identifier.package_resource_name);
   }
 
+  std::ifstream file{target_file_path};
   std::string contents{std::istreambuf_iterator(file), {}};
   const MessageSpec& spec =
     msg_specs_by_definition_identifier_
