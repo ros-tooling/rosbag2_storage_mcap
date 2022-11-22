@@ -211,6 +211,9 @@ private:
   void reset_iterator(rcutils_time_point_value_t start_time = 0);
   bool read_and_enqueue_message();
   void ensure_summary_read();
+#ifdef ROSBAG2_STORAGE_MCAP_HAS_SET_READ_ORDER
+  bool read_order_is_supported(const rosbag2_storage::ReadOrder&);
+#endif
 
   std::optional<rosbag2_storage::storage_interfaces::IOFlag> opened_as_;
   std::string relative_path_;
@@ -478,19 +481,6 @@ void MCAPStorage::ensure_summary_read() {
     if (!status.ok()) {
       throw std::runtime_error(status.message);
     }
-    // check if message indexes are present, if not, read in file order.
-    bool message_indexes_found = false;
-    for (const auto& ci : mcap_reader_->chunkIndexes()) {
-      if (ci.messageIndexLength > 0) {
-        message_indexes_found = true;
-        break;
-      }
-    }
-    if (!message_indexes_found) {
-      RCUTILS_LOG_WARN_NAMED(LOG_NAME,
-                             "no message indices found, falling back to reading in file order");
-      read_order_ = mcap::ReadMessageOptions::ReadOrder::FileOrder;
-    }
     has_read_summary_ = true;
   }
 }
@@ -498,6 +488,9 @@ void MCAPStorage::ensure_summary_read() {
 #ifdef ROSBAG2_STORAGE_MCAP_HAS_SET_READ_ORDER
 void MCAPStorage::set_read_order(const rosbag2_storage::ReadOrder& read_order) {
   auto next_read_order = read_order_;
+  if !(read_order_is_supported(read_order)) {
+    throw std::runtime_error("Requested read order not supported");
+  }
   switch (read_order.sort_by) {
     case rosbag2_storage::ReadOrder::ReceivedTimestamp:
       if (read_order.reverse) {
@@ -520,6 +513,24 @@ void MCAPStorage::set_read_order(const rosbag2_storage::ReadOrder& read_order) {
   if (next_read_order != read_order_) {
     read_order_ = next_read_order;
     reset_iterator();
+  }
+}
+
+bool MCAPStorage::read_order_is_supported(read_order) {
+  switch (read_order.sort_by) {
+    case rosbag2_storage::ReadOrder::ReceivedTimestamp:
+      ensure_summary_read();
+      bool message_indexes_found = false;
+      for (const auto& ci : mcap_reader_->chunkIndexes()) {
+        if (ci.messageIndexLength > 0) {
+          return true;
+        }
+      }
+      return false;
+    case rosbag2_storage::ReadOrder::File:
+      return !read_order.reverse;
+    case rosbag2_storage::ReadOrder::PublishedTimestamp:
+      return false;
   }
 }
 #endif
