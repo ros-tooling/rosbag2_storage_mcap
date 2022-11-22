@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <memory>
+#include <string>
+
+#include <gmock/gmock.h>
+
 #include "rclcpp/serialization.hpp"
 #include "rclcpp/serialized_message.hpp"
 #include "rcpputils/filesystem_helper.hpp"
@@ -20,19 +25,15 @@
 #include "rosbag2_cpp/writer.hpp"
 #include "rosbag2_cpp/writers/sequential_writer.hpp"
 #ifdef ROSBAG2_STORAGE_MCAP_HAS_STORAGE_OPTIONS
-  #include "rosbag2_storage/storage_options.hpp"
+#include "rosbag2_storage/storage_options.hpp"
 using StorageOptions = rosbag2_storage::StorageOptions;
 #else
-  #include "rosbag2_cpp/storage_options.hpp"
+#include "rosbag2_cpp/storage_options.hpp"
 using StorageOptions = rosbag2_cpp::StorageOptions;
 #endif
 #include "rosbag2_test_common/temporary_directory_fixture.hpp"
 #include "std_msgs/msg/string.hpp"
 
-#include <gmock/gmock.h>
-
-#include <memory>
-#include <string>
 
 using namespace ::testing;  // NOLINT
 using TemporaryDirectoryFixture = rosbag2_test_common::TemporaryDirectoryFixture;

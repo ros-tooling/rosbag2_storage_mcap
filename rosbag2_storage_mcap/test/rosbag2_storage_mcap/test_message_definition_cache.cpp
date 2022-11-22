@@ -48,21 +48,25 @@ TEST(test_message_definition_cache, can_find_msg_deps) {
   MessageDefinitionCache cache;
   auto [format, content] = cache.get_full_text("rosbag2_storage_mcap_testdata/ComplexMsg");
   ASSERT_EQ(format, Format::MSG);
-  ASSERT_EQ(content,
-            R"r(rosbag2_storage_mcap_testdata/BasicMsg b
+  ASSERT_EQ(
+    content,
+
+    R"r(rosbag2_storage_mcap_testdata/BasicMsg b
 
 ================================================================================
 MSG: rosbag2_storage_mcap_testdata/BasicMsg
 float32 c
-)r");
+)r"
+  );
 }
 
 TEST(test_message_definition_cache, can_find_idl_deps) {
   MessageDefinitionCache cache;
   auto [format, content] = cache.get_full_text("rosbag2_storage_mcap_testdata/msg/ComplexIdl");
   EXPECT_EQ(format, Format::IDL);
-  EXPECT_EQ(content,
-            R"r(================================================================================
+  EXPECT_EQ(
+    content,
+    R"r(================================================================================
 IDL: rosbag2_storage_mcap_testdata/msg/ComplexIdl
 #include "rosbag2_storage_mcap_testdata/msg/BasicIdl.idl"
 
@@ -83,7 +87,8 @@ module rosbag2_storage_mcap_testdata {
     };
   };
 };
-)r");
+)r"
+  );
 }
 
 TEST(test_message_definition_cache, can_resolve_msg_with_idl_deps) {
@@ -91,8 +96,9 @@ TEST(test_message_definition_cache, can_resolve_msg_with_idl_deps) {
   auto [format, content] =
     cache.get_full_text("rosbag2_storage_mcap_testdata/msg/ComplexMsgDependsOnIdl");
   EXPECT_EQ(format, Format::IDL);
-  EXPECT_EQ(content,
-            R"r(================================================================================
+  EXPECT_EQ(
+    content,
+    R"r(================================================================================
 IDL: rosbag2_storage_mcap_testdata/msg/ComplexMsgDependsOnIdl
 // generated from rosidl_adapter/resource/msg.idl.em
 // with input from rosbag2_storage_mcap_testdata/msg/ComplexMsgDependsOnIdl.msg
@@ -117,5 +123,6 @@ module rosbag2_storage_mcap_testdata {
     };
   };
 };
-)r");
+)r"
+  );
 }
