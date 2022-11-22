@@ -6,16 +6,24 @@ BasedOnStyle: Google
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortLambdasOnASingleLine: Empty
 AccessModifierOffset: -2
+AlignAfterOpenBracket: AlwaysBreak
 TabWidth: 2
 ContinuationIndentWidth: 2
 UseTab: Never
 BreakConstructorInitializers: BeforeComma
+BraceWrapping:
+  AfterClass: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+BreakBeforeBraces: Custom
 ColumnLimit: 100
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 DerivePointerAlignment: false
 FixNamespaceComments: true
-PointerAlignment: Left
-ReflowComments: true
+DerivePointerAlignment: false
+PointerAlignment: Middle
+ReflowComments: false
 SortIncludes: true
 IndentPPDirectives: BeforeHash
 
@@ -28,3 +36,4 @@ IncludeCategories:
     Priority: 3
   - Regex: "^<.*"
     Priority: 4
+...
