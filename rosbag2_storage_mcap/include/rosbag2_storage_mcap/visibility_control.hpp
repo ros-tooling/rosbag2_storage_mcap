@@ -24,26 +24,26 @@
 //     https://gcc.gnu.org/wiki/Visibility
 
 #if defined _WIN32 || defined __CYGWIN__
-  #ifdef __GNUC__
-    #define ROSBAG2_STORAGE_MCAP_EXPORT __attribute__((dllexport))
-    #define ROSBAG2_STORAGE_MCAP_IMPORT __attribute__((dllimport))
-  #else
-    #define ROSBAG2_STORAGE_MCAP_EXPORT __declspec(dllexport)
-    #define ROSBAG2_STORAGE_MCAP_IMPORT __declspec(dllimport)
-  #endif
-  #ifdef ROSBAG2_STORAGE_MCAP_BUILDING_DLL
-    #define ROSBAG2_STORAGE_MCAP_PUBLIC ROSBAG2_STORAGE_MCAP_EXPORT
-  #else
-    #define ROSBAG2_STORAGE_MCAP_PUBLIC ROSBAG2_STORAGE_MCAP_IMPORT
-  #endif
+#ifdef __GNUC__
+#define ROSBAG2_STORAGE_MCAP_EXPORT __attribute__((dllexport))
+#define ROSBAG2_STORAGE_MCAP_IMPORT __attribute__((dllimport))
 #else
-  #define ROSBAG2_STORAGE_MCAP_EXPORT __attribute__((visibility("default")))
-  #define ROSBAG2_STORAGE_MCAP_IMPORT
-  #if __GNUC__ >= 4
-    #define ROSBAG2_STORAGE_MCAP_PUBLIC __attribute__((visibility("default")))
-  #else
-    #define ROSBAG2_STORAGE_MCAP_PUBLIC
-  #endif
+#define ROSBAG2_STORAGE_MCAP_EXPORT __declspec(dllexport)
+#define ROSBAG2_STORAGE_MCAP_IMPORT __declspec(dllimport)
+#endif
+#ifdef ROSBAG2_STORAGE_MCAP_BUILDING_DLL
+#define ROSBAG2_STORAGE_MCAP_PUBLIC ROSBAG2_STORAGE_MCAP_EXPORT
+#else
+#define ROSBAG2_STORAGE_MCAP_PUBLIC ROSBAG2_STORAGE_MCAP_IMPORT
+#endif
+#else
+#define ROSBAG2_STORAGE_MCAP_EXPORT __attribute__((visibility("default")))
+#define ROSBAG2_STORAGE_MCAP_IMPORT
+#if __GNUC__ >= 4
+#define ROSBAG2_STORAGE_MCAP_PUBLIC __attribute__((visibility("default")))
+#else
+#define ROSBAG2_STORAGE_MCAP_PUBLIC
+#endif
 #endif
 
 #endif  // ROSBAG2_STORAGE_MCAP__VISIBILITY_CONTROL_HPP_

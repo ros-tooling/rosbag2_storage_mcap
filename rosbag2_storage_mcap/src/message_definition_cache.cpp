@@ -14,11 +14,11 @@
 
 #include "rosbag2_storage_mcap/message_definition_cache.hpp"
 
+#include <rcutils/logging_macros.h>
+
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <ament_index_cpp/get_resource.hpp>
 #include <ament_index_cpp/get_resources.hpp>
-#include <rcutils/logging_macros.h>
-
 #include <fstream>
 #include <functional>
 #include <optional>
@@ -121,9 +121,9 @@ static std::string delimiter(const DefinitionIdentifier & definition_identifier)
 }
 
 MessageSpec::MessageSpec(Format format, std::string text, const std::string & package_context)
-    : dependencies(parse_dependencies(format, text, package_context))
-    , text(std::move(text))
-    , format(format)
+: dependencies(parse_dependencies(format, text, package_context)),
+  text(std::move(text)),
+  format(format)
 {
 }
 

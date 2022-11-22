@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "gmock/gmock.h"
-#include "rosbag2_storage_mcap/message_definition_cache.hpp"
-
 #include <set>
 #include <string>
+
+#include "gmock/gmock.h"
+#include "rosbag2_storage_mcap/message_definition_cache.hpp"
 
 using rosbag2_storage_mcap::internal::Format;
 using rosbag2_storage_mcap::internal::MessageDefinitionCache;
@@ -25,7 +25,8 @@ using ::testing::UnorderedElementsAre;
 
 TEST(test_message_definition_cache, can_find_idl_includes)
 {
-  const char sample[] = R"r(
+  const char sample[] =
+    R"r(
 #include "rosbag2_storage_mcap_testdata/msg/BasicIdlA.idl"
 
 #include <rosbag2_storage_mcap_testdata/msg/BasicIdlB.idl>

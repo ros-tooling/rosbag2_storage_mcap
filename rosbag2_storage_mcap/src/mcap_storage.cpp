@@ -19,27 +19,26 @@
 #include "rosbag2_storage_mcap/message_definition_cache.hpp"
 
 #ifdef ROSBAG2_STORAGE_MCAP_HAS_YAML_HPP
-  #include "rosbag2_storage/yaml.hpp"
+#include "rosbag2_storage/yaml.hpp"
 #else
-  // COMPATIBILITY(foxy, galactic) - this block is available in rosbag2_storage/yaml.hpp in H
-  #ifdef _WIN32
-    // This is necessary because of a bug in yaml-cpp's cmake
-    #define YAML_CPP_DLL
-    // This is necessary because yaml-cpp does not always use dllimport/dllexport consistently
-    #pragma warning(push)
-    #pragma warning(disable : 4251)
-    #pragma warning(disable : 4275)
-  #endif
-  #include "yaml-cpp/yaml.h"
-  #ifdef _WIN32
-    #pragma warning(pop)
-  #endif
+// COMPATIBILITY(foxy, galactic) - this block is available in rosbag2_storage/yaml.hpp in H
+#ifdef _WIN32
+// This is necessary because of a bug in yaml-cpp's cmake
+#define YAML_CPP_DLL
+// This is necessary because yaml-cpp does not always use dllimport/dllexport consistently
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#pragma warning(disable : 4275)
 #endif
-
-#include <mcap/mcap.hpp>
+#include "yaml-cpp/yaml.h"
+#ifdef _WIN32
+#pragma warning(pop)
+#endif
+#endif
 
 #include <algorithm>
 #include <filesystem>
+#include <mcap/mcap.hpp>
 #include <memory>
 #include <optional>
 #include <string>
@@ -47,7 +46,7 @@
 #include <utility>
 #include <vector>
 #ifdef ROSBAG2_STORAGE_MCAP_HAS_STORAGE_FILTER_TOPIC_REGEX
-  #include <regex>
+#include <regex>
 #endif
 
 #define DECLARE_YAML_VALUE_MAP(KEY_TYPE, VALUE_TYPE, ...)                   \
@@ -85,10 +84,7 @@ namespace
 // Simple wrapper with default constructor for use by YAML
 struct McapWriterOptions : mcap::McapWriterOptions
 {
-  McapWriterOptions()
-      : mcap::McapWriterOptions("ros2")
-  {
-  }
+  McapWriterOptions() : mcap::McapWriterOptions("ros2") {}
 };
 
 }  // namespace
@@ -415,10 +411,7 @@ rosbag2_storage::BagMetadata MCAPStorage::get_metadata()
   return metadata_;
 }
 
-std::string MCAPStorage::get_relative_file_path() const
-{
-  return relative_path_;
-}
+std::string MCAPStorage::get_relative_file_path() const { return relative_path_; }
 
 uint64_t MCAPStorage::get_bagfile_size() const
 {
@@ -433,10 +426,7 @@ uint64_t MCAPStorage::get_bagfile_size() const
   }
 }
 
-std::string MCAPStorage::get_storage_identifier() const
-{
-  return "mcap";
-}
+std::string MCAPStorage::get_storage_identifier() const { return "mcap"; }
 
 /** BaseReadInterface **/
 bool MCAPStorage::read_and_enqueue_message()
@@ -596,10 +586,7 @@ void MCAPStorage::set_filter(const rosbag2_storage::StorageFilter & storage_filt
   reset_iterator();
 }
 
-void MCAPStorage::reset_filter()
-{
-  set_filter(rosbag2_storage::StorageFilter());
-}
+void MCAPStorage::reset_filter() { set_filter(rosbag2_storage::StorageFilter()); }
 
 void MCAPStorage::seek(const rcutils_time_point_value_t & time_stamp)
 {
@@ -607,10 +594,7 @@ void MCAPStorage::seek(const rcutils_time_point_value_t & time_stamp)
 }
 
 /** ReadWriteInterface **/
-uint64_t MCAPStorage::get_minimum_split_file_size() const
-{
-  return 1024;
-}
+uint64_t MCAPStorage::get_minimum_split_file_size() const { return 1024; }
 
 /** BaseWriteInterface **/
 void MCAPStorage::write(std::shared_ptr<const rosbag2_storage::SerializedBagMessage> msg)
