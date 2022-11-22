@@ -52,10 +52,12 @@
 
 #define DECLARE_YAML_VALUE_MAP(KEY_TYPE, VALUE_TYPE, ...)                   \
   template <>                                                               \
-  struct convert<KEY_TYPE> {                                                \
-    static Node encode(const KEY_TYPE& e) {                                 \
+  struct convert<KEY_TYPE>                                                  \
+  {                                                                         \
+    static Node encode(const KEY_TYPE & e)                                  \
+    {                                                                       \
       static const std::pair<KEY_TYPE, VALUE_TYPE> mapping[] = __VA_ARGS__; \
-      for (const auto& m : mapping) {                                       \
+      for (const auto & m : mapping) {                                      \
         if (m.first == e) {                                                 \
           return Node(m.second);                                            \
         }                                                                   \
@@ -63,10 +65,11 @@
       return Node("");                                                      \
     }                                                                       \
                                                                             \
-    static bool decode(const Node& node, KEY_TYPE& e) {                     \
+    static bool decode(const Node & node, KEY_TYPE & e)                     \
+    {                                                                       \
       static const std::pair<KEY_TYPE, VALUE_TYPE> mapping[] = __VA_ARGS__; \
       const auto val = node.as<VALUE_TYPE>();                               \
-      for (const auto& m : mapping) {                                       \
+      for (const auto & m : mapping) {                                      \
         if (m.second == val) {                                              \
           e = m.first;                                                      \
           return true;                                                      \
@@ -76,43 +79,53 @@
     }                                                                       \
   }
 
-namespace {
+namespace
+{
 
 // Simple wrapper with default constructor for use by YAML
-struct McapWriterOptions : mcap::McapWriterOptions {
+struct McapWriterOptions : mcap::McapWriterOptions
+{
   McapWriterOptions()
-      : mcap::McapWriterOptions("ros2") {}
+      : mcap::McapWriterOptions("ros2")
+  {
+  }
 };
 
 }  // namespace
 
-namespace YAML {
+namespace YAML
+{
 
 #ifndef ROSBAG2_STORAGE_MCAP_HAS_YAML_HPP
 template <typename T>
-void optional_assign(const Node& node, std::string field, T& assign_to) {
+void optional_assign(const Node & node, std::string field, T & assign_to)
+{
   if (node[field]) {
     assign_to = node[field].as<T>();
   }
 }
 #endif
 
-DECLARE_YAML_VALUE_MAP(mcap::Compression, std::string,
-                       {{mcap::Compression::None, "None"},
-                        {mcap::Compression::Lz4, "Lz4"},
-                        {mcap::Compression::Zstd, "Zstd"}});
+DECLARE_YAML_VALUE_MAP(
+  mcap::Compression, std::string,
+  {{mcap::Compression::None, "None"},
+   {mcap::Compression::Lz4, "Lz4"},
+   {mcap::Compression::Zstd, "Zstd"}});
 
-DECLARE_YAML_VALUE_MAP(mcap::CompressionLevel, std::string,
-                       {{mcap::CompressionLevel::Fastest, "Fastest"},
-                        {mcap::CompressionLevel::Fast, "Fast"},
-                        {mcap::CompressionLevel::Default, "Default"},
-                        {mcap::CompressionLevel::Slow, "Slow"},
-                        {mcap::CompressionLevel::Slowest, "Slowest"}});
+DECLARE_YAML_VALUE_MAP(
+  mcap::CompressionLevel, std::string,
+  {{mcap::CompressionLevel::Fastest, "Fastest"},
+   {mcap::CompressionLevel::Fast, "Fast"},
+   {mcap::CompressionLevel::Default, "Default"},
+   {mcap::CompressionLevel::Slow, "Slow"},
+   {mcap::CompressionLevel::Slowest, "Slowest"}});
 
 template <>
-struct convert<McapWriterOptions> {
+struct convert<McapWriterOptions>
+{
   // NOTE: when updating this struct, also update documentation in README.md
-  static bool decode(const Node& node, McapWriterOptions& o) {
+  static bool decode(const Node & node, McapWriterOptions & o)
+  {
     optional_assign<bool>(node, "noChunkCRC", o.noChunkCRC);
     optional_assign<bool>(node, "noAttachmentCRC", o.noAttachmentCRC);
     optional_assign<bool>(node, "enableDataCRC", o.enableDataCRC);
@@ -138,36 +151,41 @@ struct convert<McapWriterOptions> {
 
 }  // namespace YAML
 
-namespace rosbag2_storage_plugins {
+namespace rosbag2_storage_plugins
+{
 
 using mcap::ByteOffset;
 using time_point = std::chrono::time_point<std::chrono::high_resolution_clock>;
 static const char FILE_EXTENSION[] = ".mcap";
 static const char LOG_NAME[] = "rosbag2_storage_mcap";
 
-static void OnProblem(const mcap::Status& status) {
+static void OnProblem(const mcap::Status & status)
+{
   RCUTILS_LOG_ERROR_NAMED(LOG_NAME, "%s", status.message.c_str());
 }
 
 /**
  * A storage implementation for the MCAP file format.
  */
-class MCAPStorage : public rosbag2_storage::storage_interfaces::ReadWriteInterface {
+class MCAPStorage : public rosbag2_storage::storage_interfaces::ReadWriteInterface
+{
 public:
   MCAPStorage();
   ~MCAPStorage() override;
 
   /** BaseIOInterface **/
 #ifdef ROSBAG2_STORAGE_MCAP_HAS_STORAGE_OPTIONS
-  void open(const rosbag2_storage::StorageOptions& storage_options,
-            rosbag2_storage::storage_interfaces::IOFlag io_flag =
-              rosbag2_storage::storage_interfaces::IOFlag::READ_WRITE) override;
-  void open(const std::string& uri, rosbag2_storage::storage_interfaces::IOFlag io_flag =
-                                      rosbag2_storage::storage_interfaces::IOFlag::READ_WRITE);
+  void open(
+    const rosbag2_storage::StorageOptions & storage_options,
+    rosbag2_storage::storage_interfaces::IOFlag io_flag =
+      rosbag2_storage::storage_interfaces::IOFlag::READ_WRITE) override;
+  void open(
+    const std::string & uri, rosbag2_storage::storage_interfaces::IOFlag io_flag =
+                               rosbag2_storage::storage_interfaces::IOFlag::READ_WRITE);
 #else
-  void open(const std::string& uri,
-            rosbag2_storage::storage_interfaces::IOFlag io_flag =
-              rosbag2_storage::storage_interfaces::IOFlag::READ_WRITE) override;
+  void open(
+    const std::string & uri, rosbag2_storage::storage_interfaces::IOFlag io_flag =
+                               rosbag2_storage::storage_interfaces::IOFlag::READ_WRITE) override;
 #endif
 
   /** BaseInfoInterface **/
@@ -178,19 +196,19 @@ public:
 
   /** BaseReadInterface **/
 #ifdef ROSBAG2_STORAGE_MCAP_HAS_SET_READ_ORDER
-  void set_read_order(const rosbag2_storage::ReadOrder&) override;
+  void set_read_order(const rosbag2_storage::ReadOrder &) override;
 #endif
   bool has_next() override;
   std::shared_ptr<rosbag2_storage::SerializedBagMessage> read_next() override;
   std::vector<rosbag2_storage::TopicMetadata> get_all_topics_and_types() override;
 
   /** ReadOnlyInterface **/
-  void set_filter(const rosbag2_storage::StorageFilter& storage_filter) override;
+  void set_filter(const rosbag2_storage::StorageFilter & storage_filter) override;
   void reset_filter() override;
 #ifdef ROSBAG2_STORAGE_MCAP_OVERRIDE_SEEK_METHOD
-  void seek(const rcutils_time_point_value_t& time_stamp) override;
+  void seek(const rcutils_time_point_value_t & time_stamp) override;
 #else
-  void seek(const rcutils_time_point_value_t& timestamp);
+  void seek(const rcutils_time_point_value_t & timestamp);
 #endif
 
   /** ReadWriteInterface **/
@@ -199,14 +217,14 @@ public:
   /** BaseWriteInterface **/
   void write(std::shared_ptr<const rosbag2_storage::SerializedBagMessage> msg) override;
   void write(
-    const std::vector<std::shared_ptr<const rosbag2_storage::SerializedBagMessage>>& msg) override;
-  void create_topic(const rosbag2_storage::TopicMetadata& topic) override;
-  void remove_topic(const rosbag2_storage::TopicMetadata& topic) override;
+    const std::vector<std::shared_ptr<const rosbag2_storage::SerializedBagMessage>> & msg) override;
+  void create_topic(const rosbag2_storage::TopicMetadata & topic) override;
+  void remove_topic(const rosbag2_storage::TopicMetadata & topic) override;
 
 private:
-  void open_impl(const std::string& uri, const std::string& preset_profile,
-                 rosbag2_storage::storage_interfaces::IOFlag io_flag,
-                 const std::string& storage_config_uri);
+  void open_impl(
+    const std::string & uri, const std::string & preset_profile,
+    rosbag2_storage::storage_interfaces::IOFlag io_flag, const std::string & storage_config_uri);
 
   void reset_iterator(rcutils_time_point_value_t start_time = 0);
   bool read_and_enqueue_message();
@@ -237,12 +255,14 @@ private:
   bool has_read_summary_ = false;
 };
 
-MCAPStorage::MCAPStorage() {
+MCAPStorage::MCAPStorage()
+{
   metadata_.storage_identifier = get_storage_identifier();
   metadata_.message_count = 0;
 }
 
-MCAPStorage::~MCAPStorage() {
+MCAPStorage::~MCAPStorage()
+{
   if (mcap_reader_) {
     mcap_reader_->close();
   }
@@ -256,19 +276,23 @@ MCAPStorage::~MCAPStorage() {
 
 /** BaseIOInterface **/
 #ifdef ROSBAG2_STORAGE_MCAP_HAS_STORAGE_OPTIONS
-void MCAPStorage::open(const rosbag2_storage::StorageOptions& storage_options,
-                       rosbag2_storage::storage_interfaces::IOFlag io_flag) {
-  open_impl(storage_options.uri, storage_options.storage_preset_profile, io_flag,
-            storage_options.storage_config_uri);
+void MCAPStorage::open(
+  const rosbag2_storage::StorageOptions & storage_options,
+  rosbag2_storage::storage_interfaces::IOFlag io_flag)
+{
+  open_impl(
+    storage_options.uri, storage_options.storage_preset_profile, io_flag,
+    storage_options.storage_config_uri);
 }
 #endif
 
-void MCAPStorage::open(const std::string& uri,
-                       rosbag2_storage::storage_interfaces::IOFlag io_flag) {
+void MCAPStorage::open(const std::string & uri, rosbag2_storage::storage_interfaces::IOFlag io_flag)
+{
   open_impl(uri, "", io_flag, "");
 }
 
-static void SetOptionsForPreset(const std::string& preset_profile, McapWriterOptions& options) {
+static void SetOptionsForPreset(const std::string & preset_profile, McapWriterOptions & options)
+{
   if (preset_profile == "fastwrite") {
     options.noChunking = true;
     options.noSummaryCRC = true;
@@ -288,9 +312,10 @@ static void SetOptionsForPreset(const std::string& preset_profile, McapWriterOpt
   }
 }
 
-void MCAPStorage::open_impl(const std::string& uri, const std::string& preset_profile,
-                            rosbag2_storage::storage_interfaces::IOFlag io_flag,
-                            const std::string& storage_config_uri) {
+void MCAPStorage::open_impl(
+  const std::string & uri, const std::string & preset_profile,
+  rosbag2_storage::storage_interfaces::IOFlag io_flag, const std::string & storage_config_uri)
+{
   switch (io_flag) {
     case rosbag2_storage::storage_interfaces::IOFlag::READ_ONLY: {
       relative_path_ = uri;
@@ -338,7 +363,8 @@ void MCAPStorage::open_impl(const std::string& uri, const std::string& preset_pr
 }
 
 /** BaseInfoInterface **/
-rosbag2_storage::BagMetadata MCAPStorage::get_metadata() {
+rosbag2_storage::BagMetadata MCAPStorage::get_metadata()
+{
   ensure_summary_read();
 
   metadata_.version = 2;
@@ -347,15 +373,15 @@ rosbag2_storage::BagMetadata MCAPStorage::get_metadata() {
   metadata_.relative_file_paths = {get_relative_file_path()};
 
   // Fill out summary metadata from the Statistics record
-  const mcap::Statistics& stats = mcap_reader_->statistics().value();
+  const mcap::Statistics & stats = mcap_reader_->statistics().value();
   metadata_.message_count = stats.messageCount;
   metadata_.duration = std::chrono::nanoseconds(stats.messageEndTime - stats.messageStartTime);
   metadata_.starting_time = time_point(std::chrono::nanoseconds(stats.messageStartTime));
 
   // Build a list of topic information along with per-topic message counts
   metadata_.topics_with_message_count.clear();
-  for (const auto& [channel_id, channel_ptr] : mcap_reader_->channels()) {
-    const mcap::Channel& channel = *channel_ptr;
+  for (const auto & [channel_id, channel_ptr] : mcap_reader_->channels()) {
+    const mcap::Channel & channel = *channel_ptr;
 
     // Look up the Schema for this topic
     const auto schema_ptr = mcap_reader_->schema(channel.schemaId);
@@ -389,28 +415,32 @@ rosbag2_storage::BagMetadata MCAPStorage::get_metadata() {
   return metadata_;
 }
 
-std::string MCAPStorage::get_relative_file_path() const {
+std::string MCAPStorage::get_relative_file_path() const
+{
   return relative_path_;
 }
 
-uint64_t MCAPStorage::get_bagfile_size() const {
+uint64_t MCAPStorage::get_bagfile_size() const
+{
   if (opened_as_ == rosbag2_storage::storage_interfaces::IOFlag::READ_ONLY) {
     return data_source_ ? data_source_->size() : 0;
   } else {
     if (!mcap_writer_) {
       return 0;
     }
-    const auto* data_sink = mcap_writer_->dataSink();
+    const auto * data_sink = mcap_writer_->dataSink();
     return data_sink ? data_sink->size() : 0;
   }
 }
 
-std::string MCAPStorage::get_storage_identifier() const {
+std::string MCAPStorage::get_storage_identifier() const
+{
   return "mcap";
 }
 
 /** BaseReadInterface **/
-bool MCAPStorage::read_and_enqueue_message() {
+bool MCAPStorage::read_and_enqueue_message()
+{
   // The recording has not been opened.
   if (!linear_iterator_) {
     return false;
@@ -420,19 +450,19 @@ bool MCAPStorage::read_and_enqueue_message() {
     return true;
   }
 
-  auto& it = *linear_iterator_;
+  auto & it = *linear_iterator_;
 
   // At the end of the recording
   if (it == linear_view_->end()) {
     return false;
   }
 
-  const auto& messageView = *it;
+  const auto & messageView = *it;
   auto msg = std::make_shared<rosbag2_storage::SerializedBagMessage>();
   msg->time_stamp = rcutils_time_point_value_t(messageView.message.logTime);
   msg->topic_name = messageView.channel->topic;
-  msg->serialized_data = rosbag2_storage::make_serialized_message(messageView.message.data,
-                                                                  messageView.message.dataSize);
+  msg->serialized_data = rosbag2_storage::make_serialized_message(
+    messageView.message.data, messageView.message.dataSize);
 
   // enqueue this message to be used
   next_ = msg;
@@ -441,14 +471,15 @@ bool MCAPStorage::read_and_enqueue_message() {
   return true;
 }
 
-void MCAPStorage::reset_iterator(rcutils_time_point_value_t start_time) {
+void MCAPStorage::reset_iterator(rcutils_time_point_value_t start_time)
+{
   ensure_summary_read();
   mcap::ReadMessageOptions options;
   options.startTime = mcap::Timestamp(start_time);
   options.readOrder = read_order_;
   if (!storage_filter_.topics.empty()) {
     options.topicFilter = [this](std::string_view topic) {
-      for (const auto& match_topic : storage_filter_.topics) {
+      for (const auto & match_topic : storage_filter_.topics) {
         if (match_topic == topic) {
           return true;
         }
@@ -471,7 +502,8 @@ void MCAPStorage::reset_iterator(rcutils_time_point_value_t start_time) {
   linear_iterator_ = std::make_unique<mcap::LinearMessageView::Iterator>(linear_view_->begin());
 }
 
-void MCAPStorage::ensure_summary_read() {
+void MCAPStorage::ensure_summary_read()
+{
   if (!has_read_summary_) {
     const auto status = mcap_reader_->readSummary(mcap::ReadSummaryMethod::AllowFallbackScan);
 
@@ -480,15 +512,15 @@ void MCAPStorage::ensure_summary_read() {
     }
     // check if message indexes are present, if not, read in file order.
     bool message_indexes_found = false;
-    for (const auto& ci : mcap_reader_->chunkIndexes()) {
+    for (const auto & ci : mcap_reader_->chunkIndexes()) {
       if (ci.messageIndexLength > 0) {
         message_indexes_found = true;
         break;
       }
     }
     if (!message_indexes_found) {
-      RCUTILS_LOG_WARN_NAMED(LOG_NAME,
-                             "no message indices found, falling back to reading in file order");
+      RCUTILS_LOG_WARN_NAMED(
+        LOG_NAME, "no message indices found, falling back to reading in file order");
       read_order_ = mcap::ReadMessageOptions::ReadOrder::FileOrder;
     }
     has_read_summary_ = true;
@@ -496,7 +528,8 @@ void MCAPStorage::ensure_summary_read() {
 }
 
 #ifdef ROSBAG2_STORAGE_MCAP_HAS_SET_READ_ORDER
-void MCAPStorage::set_read_order(const rosbag2_storage::ReadOrder& read_order) {
+void MCAPStorage::set_read_order(const rosbag2_storage::ReadOrder & read_order)
+{
   auto next_read_order = read_order_;
   switch (read_order.sort_by) {
     case rosbag2_storage::ReadOrder::ReceivedTimestamp:
@@ -524,7 +557,8 @@ void MCAPStorage::set_read_order(const rosbag2_storage::ReadOrder& read_order) {
 }
 #endif
 
-bool MCAPStorage::has_next() {
+bool MCAPStorage::has_next()
+{
   if (!linear_iterator_) {
     return false;
   }
@@ -536,7 +570,8 @@ bool MCAPStorage::has_next() {
   return read_and_enqueue_message();
 }
 
-std::shared_ptr<rosbag2_storage::SerializedBagMessage> MCAPStorage::read_next() {
+std::shared_ptr<rosbag2_storage::SerializedBagMessage> MCAPStorage::read_next()
+{
   if (!has_next()) {
     throw std::runtime_error{"No next message is available."};
   }
@@ -544,36 +579,42 @@ std::shared_ptr<rosbag2_storage::SerializedBagMessage> MCAPStorage::read_next() 
   return std::move(next_);
 }
 
-std::vector<rosbag2_storage::TopicMetadata> MCAPStorage::get_all_topics_and_types() {
+std::vector<rosbag2_storage::TopicMetadata> MCAPStorage::get_all_topics_and_types()
+{
   auto metadata = get_metadata();
   std::vector<rosbag2_storage::TopicMetadata> out;
-  for (const auto& topic : metadata.topics_with_message_count) {
+  for (const auto & topic : metadata.topics_with_message_count) {
     out.push_back(topic.topic_metadata);
   }
   return out;
 }
 
 /** ReadOnlyInterface **/
-void MCAPStorage::set_filter(const rosbag2_storage::StorageFilter& storage_filter) {
+void MCAPStorage::set_filter(const rosbag2_storage::StorageFilter & storage_filter)
+{
   storage_filter_ = storage_filter;
   reset_iterator();
 }
 
-void MCAPStorage::reset_filter() {
+void MCAPStorage::reset_filter()
+{
   set_filter(rosbag2_storage::StorageFilter());
 }
 
-void MCAPStorage::seek(const rcutils_time_point_value_t& time_stamp) {
+void MCAPStorage::seek(const rcutils_time_point_value_t & time_stamp)
+{
   reset_iterator(time_stamp);
 }
 
 /** ReadWriteInterface **/
-uint64_t MCAPStorage::get_minimum_split_file_size() const {
+uint64_t MCAPStorage::get_minimum_split_file_size() const
+{
   return 1024;
 }
 
 /** BaseWriteInterface **/
-void MCAPStorage::write(std::shared_ptr<const rosbag2_storage::SerializedBagMessage> msg) {
+void MCAPStorage::write(std::shared_ptr<const rosbag2_storage::SerializedBagMessage> msg)
+{
   const auto topic_it = topics_.find(msg->topic_name);
   if (topic_it == topics_.end()) {
     throw std::runtime_error{"Unknown message topic \"" + msg->topic_name + "\""};
@@ -595,12 +636,12 @@ void MCAPStorage::write(std::shared_ptr<const rosbag2_storage::SerializedBagMess
   mcap_msg.logTime = mcap::Timestamp(msg->time_stamp);
   mcap_msg.publishTime = mcap_msg.logTime;
   mcap_msg.dataSize = msg->serialized_data->buffer_length;
-  mcap_msg.data = reinterpret_cast<const std::byte*>(msg->serialized_data->buffer);
+  mcap_msg.data = reinterpret_cast<const std::byte *>(msg->serialized_data->buffer);
   const auto status = mcap_writer_->write(mcap_msg);
   if (!status.ok()) {
-    throw std::runtime_error{std::string{"Failed to write "} +
-                             std::to_string(msg->serialized_data->buffer_length) +
-                             " byte message to MCAP file: " + status.message};
+    throw std::runtime_error{
+      std::string{"Failed to write "} + std::to_string(msg->serialized_data->buffer_length) +
+      " byte message to MCAP file: " + status.message};
   }
 
   /// Update metadata
@@ -614,13 +655,15 @@ void MCAPStorage::write(std::shared_ptr<const rosbag2_storage::SerializedBagMess
 }
 
 void MCAPStorage::write(
-  const std::vector<std::shared_ptr<const rosbag2_storage::SerializedBagMessage>>& msgs) {
-  for (const auto& msg : msgs) {
+  const std::vector<std::shared_ptr<const rosbag2_storage::SerializedBagMessage>> & msgs)
+{
+  for (const auto & msg : msgs) {
     write(msg);
   }
 }
 
-void MCAPStorage::create_topic(const rosbag2_storage::TopicMetadata& topic) {
+void MCAPStorage::create_topic(const rosbag2_storage::TopicMetadata & topic)
+{
   auto topic_info = rosbag2_storage::TopicInformation{topic, 0};
   const auto topic_it = topics_.find(topic.name);
   if (topic_it == topics_.end()) {
@@ -631,7 +674,7 @@ void MCAPStorage::create_topic(const rosbag2_storage::TopicMetadata& topic) {
   }
 
   // Create Schema for topic if it doesn't exist yet
-  const auto& datatype = topic_info.topic_metadata.type;
+  const auto & datatype = topic_info.topic_metadata.type;
   const auto schema_it = schema_ids_.find(datatype);
   mcap::SchemaId schema_id;
   if (schema_it == schema_ids_.end()) {
@@ -644,11 +687,12 @@ void MCAPStorage::create_topic(const rosbag2_storage::TopicMetadata& topic) {
       } else {
         schema.encoding = "ros2idl";
       }
-      schema.data.assign(reinterpret_cast<const std::byte*>(full_text.data()),
-                         reinterpret_cast<const std::byte*>(full_text.data() + full_text.size()));
-    } catch (rosbag2_storage_mcap::internal::DefinitionNotFoundError& err) {
-      RCUTILS_LOG_ERROR_NAMED(LOG_NAME, "definition file(s) missing for %s: missing %s",
-                              datatype.c_str(), err.what());
+      schema.data.assign(
+        reinterpret_cast<const std::byte *>(full_text.data()),
+        reinterpret_cast<const std::byte *>(full_text.data() + full_text.size()));
+    } catch (rosbag2_storage_mcap::internal::DefinitionNotFoundError & err) {
+      RCUTILS_LOG_ERROR_NAMED(
+        LOG_NAME, "definition file(s) missing for %s: missing %s", datatype.c_str(), err.what());
       schema.encoding = "";
     }
     mcap_writer_->addSchema(schema);
@@ -665,19 +709,20 @@ void MCAPStorage::create_topic(const rosbag2_storage::TopicMetadata& topic) {
     channel.topic = topic.name;
     channel.messageEncoding = topic_info.topic_metadata.serialization_format;
     channel.schemaId = schema_id;
-    channel.metadata.emplace("offered_qos_profiles",
-                             topic_info.topic_metadata.offered_qos_profiles);
+    channel.metadata.emplace(
+      "offered_qos_profiles", topic_info.topic_metadata.offered_qos_profiles);
     mcap_writer_->addChannel(channel);
     channel_ids_.emplace(topic.name, channel.id);
   }
 }
 
-void MCAPStorage::remove_topic(const rosbag2_storage::TopicMetadata& topic) {
+void MCAPStorage::remove_topic(const rosbag2_storage::TopicMetadata & topic)
+{
   topics_.erase(topic.name);
 }
 
 }  // namespace rosbag2_storage_plugins
 
 #include "pluginlib/class_list_macros.hpp"  // NOLINT
-PLUGINLIB_EXPORT_CLASS(rosbag2_storage_plugins::MCAPStorage,
-                       rosbag2_storage::storage_interfaces::ReadWriteInterface)
+PLUGINLIB_EXPORT_CLASS(
+  rosbag2_storage_plugins::MCAPStorage, rosbag2_storage::storage_interfaces::ReadWriteInterface)
