@@ -80,18 +80,15 @@
 
 namespace
 {
-
 // Simple wrapper with default constructor for use by YAML
 struct McapWriterOptions : mcap::McapWriterOptions
 {
   McapWriterOptions() : mcap::McapWriterOptions("ros2") {}
 };
-
 }  // namespace
 
 namespace YAML
 {
-
 #ifndef ROSBAG2_STORAGE_MCAP_HAS_YAML_HPP
 template <typename T>
 void optional_assign(const Node & node, std::string field, T & assign_to)
@@ -144,12 +141,10 @@ struct convert<McapWriterOptions>
     return true;
   }
 };
-
 }  // namespace YAML
 
 namespace rosbag2_storage_plugins
 {
-
 using mcap::ByteOffset;
 using time_point = std::chrono::time_point<std::chrono::high_resolution_clock>;
 static const char FILE_EXTENSION[] = ".mcap";
@@ -704,7 +699,6 @@ void MCAPStorage::remove_topic(const rosbag2_storage::TopicMetadata & topic)
 {
   topics_.erase(topic.name);
 }
-
 }  // namespace rosbag2_storage_plugins
 
 #include "pluginlib/class_list_macros.hpp"  // NOLINT

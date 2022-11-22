@@ -25,8 +25,8 @@
 
 namespace rosbag2_storage_mcap::internal
 {
-
-enum struct Format {
+enum struct Format
+{
   IDL,
   MSG,
 };

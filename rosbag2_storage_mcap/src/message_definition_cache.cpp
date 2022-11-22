@@ -30,7 +30,6 @@
 
 namespace rosbag2_storage_mcap::internal
 {
-
 // Match datatype names (foo_msgs/Bar or foo_msgs/msg/Bar)
 static const std::regex PACKAGE_TYPENAME_REGEX{R"(^([a-zA-Z0-9_]+)/(?:msg/)?([a-zA-Z0-9_]+)$)"};
 
@@ -196,5 +195,4 @@ std::pair<Format, std::string> MessageDefinitionCache::get_full_text(
   }
   return std::make_pair(format, result);
 }
-
 }  // namespace rosbag2_storage_mcap::internal

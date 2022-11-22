@@ -27,9 +27,9 @@ TEST(test_message_definition_cache, can_find_idl_includes)
 {
   const char sample[] =
     R"r(
-#include "rosbag2_storage_mcap_testdata/msg/BasicIdlA.idl"
-
 #include <rosbag2_storage_mcap_testdata/msg/BasicIdlB.idl>
+
+#include "rosbag2_storage_mcap_testdata/msg/BasicIdlA.idl"
 
 module rosbag2_storage_mcap_testdata {
   module msg {
