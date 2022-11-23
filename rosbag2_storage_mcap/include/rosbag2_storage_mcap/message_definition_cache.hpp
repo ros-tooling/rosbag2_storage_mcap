@@ -23,43 +23,52 @@
 #include <unordered_set>
 #include <utility>
 
-namespace rosbag2_storage_mcap::internal {
-
-enum struct Format {
+namespace rosbag2_storage_mcap::internal
+{
+enum struct Format
+{
   IDL,
   MSG,
 };
 
-struct MessageSpec {
-  MessageSpec(Format format, std::string text, const std::string& package_context);
+struct MessageSpec
+{
+  MessageSpec(Format format, std::string text, const std::string & package_context);
   const std::set<std::string> dependencies;
   const std::string text;
   Format format;
 };
 
-struct DefinitionIdentifier {
+struct DefinitionIdentifier
+{
   Format format;
   std::string package_resource_name;
 
-  bool operator==(const DefinitionIdentifier& di) const {
+  bool operator==(const DefinitionIdentifier & di) const
+  {
     return (format == di.format) && (package_resource_name == di.package_resource_name);
   }
 };
 
-class DefinitionNotFoundError : public std::exception {
+class DefinitionNotFoundError : public std::exception
+{
 private:
   std::string name_;
 
 public:
   explicit DefinitionNotFoundError(std::string name)
-      : name_(std::move(name)) {}
+      : name_(std::move(name))
+  {
+  }
 
-  const char* what() const noexcept override {
+  const char * what() const noexcept override
+  {
     return name_.c_str();
   }
 };
 
-class MessageDefinitionCache final {
+class MessageDefinitionCache final
+{
 public:
   /**
    * Concatenate the message definition with its dependencies into a self-contained schema.
@@ -70,11 +79,13 @@ public:
    * package resource name.
    */
   ROSBAG2_STORAGE_MCAP_PUBLIC
-  std::pair<Format, std::string> get_full_text(const std::string& package_resource_name);
+  std::pair<Format, std::string> get_full_text(const std::string & package_resource_name);
 
 private:
-  struct DefinitionIdentifierHash {
-    std::size_t operator()(const DefinitionIdentifier& di) const {
+  struct DefinitionIdentifierHash
+  {
+    std::size_t operator()(const DefinitionIdentifier & di) const
+    {
       std::size_t h1 = std::hash<Format>()(di.format);
       std::size_t h2 = std::hash<std::string>()(di.package_resource_name);
       return h1 ^ h2;
@@ -84,15 +95,15 @@ private:
    * Load and parse the message file referenced by the given datatype, or return it from
    * msg_specs_by_datatype
    */
-  const MessageSpec& load_message_spec(const DefinitionIdentifier& definition_identifier);
+  const MessageSpec & load_message_spec(const DefinitionIdentifier & definition_identifier);
 
   std::unordered_map<DefinitionIdentifier, MessageSpec, DefinitionIdentifierHash>
     msg_specs_by_definition_identifier_;
 };
 
 ROSBAG2_STORAGE_MCAP_PUBLIC
-std::set<std::string> parse_dependencies(Format format, const std::string& text,
-                                         const std::string& package_context);
+std::set<std::string> parse_dependencies(Format format, const std::string & text,
+                                         const std::string & package_context);
 
 }  // namespace rosbag2_storage_mcap::internal
 

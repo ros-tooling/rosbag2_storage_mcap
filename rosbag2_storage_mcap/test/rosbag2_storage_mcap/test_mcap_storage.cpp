@@ -37,7 +37,8 @@ using StorageOptions = rosbag2_cpp::StorageOptions;
 using namespace ::testing;  // NOLINT
 using TemporaryDirectoryFixture = rosbag2_test_common::TemporaryDirectoryFixture;
 
-TEST_F(TemporaryDirectoryFixture, can_write_and_read_basic_mcap_file) {
+TEST_F(TemporaryDirectoryFixture, can_write_and_read_basic_mcap_file)
+{
   auto uri = rcpputils::fs::path(temporary_dir_path_) / "bag";
   auto expected_bag = uri / "bag_0.mcap";
   const int64_t timestamp_nanos = 100;  // arbitrary value
@@ -76,8 +77,8 @@ TEST_F(TemporaryDirectoryFixture, can_write_and_read_basic_mcap_file) {
     // For this example it wouldn't matter, but in case anybody extends this test, it's for safety.
     auto serialized_bag_msg = std::make_shared<rosbag2_storage::SerializedBagMessage>();
     serialized_bag_msg->serialized_data = std::shared_ptr<rcutils_uint8_array_t>(
-      const_cast<rcutils_uint8_array_t*>(&serialized_msg->get_rcl_serialized_message()),
-      [](rcutils_uint8_array_t* /* data */) {});
+      const_cast<rcutils_uint8_array_t *>(&serialized_msg->get_rcl_serialized_message()),
+      [](rcutils_uint8_array_t * /* data */) {});
     serialized_bag_msg->time_stamp = time_stamp;
     serialized_bag_msg->topic_name = topic_name;
     writer.write(serialized_bag_msg);
@@ -102,7 +103,8 @@ TEST_F(TemporaryDirectoryFixture, can_write_and_read_basic_mcap_file) {
 
 #ifdef ROSBAG2_STORAGE_MCAP_HAS_STORAGE_OPTIONS
 // This test disabled on Foxy since StorageOptions doesn't have storage_config_uri field on it
-TEST_F(TemporaryDirectoryFixture, can_write_mcap_with_zstd_configured_from_yaml) {
+TEST_F(TemporaryDirectoryFixture, can_write_mcap_with_zstd_configured_from_yaml)
+{
   auto uri = rcpputils::fs::path(temporary_dir_path_) / "bag";
   auto expected_bag = uri / "bag_0.mcap";
   const int64_t timestamp_nanos = 100;  // arbitrary value
@@ -143,8 +145,8 @@ TEST_F(TemporaryDirectoryFixture, can_write_mcap_with_zstd_configured_from_yaml)
     // For this example it wouldn't matter, but in case anybody extends this test, it's for safety.
     auto serialized_bag_msg = std::make_shared<rosbag2_storage::SerializedBagMessage>();
     serialized_bag_msg->serialized_data = std::shared_ptr<rcutils_uint8_array_t>(
-      const_cast<rcutils_uint8_array_t*>(&serialized_msg->get_rcl_serialized_message()),
-      [](rcutils_uint8_array_t* /* data */) {});
+      const_cast<rcutils_uint8_array_t *>(&serialized_msg->get_rcl_serialized_message()),
+      [](rcutils_uint8_array_t * /* data */) {});
     serialized_bag_msg->time_stamp = time_stamp;
     serialized_bag_msg->topic_name = topic_name;
     writer.write(serialized_bag_msg);

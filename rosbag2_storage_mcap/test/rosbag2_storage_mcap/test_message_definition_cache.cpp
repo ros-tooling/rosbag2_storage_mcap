@@ -23,8 +23,10 @@ using rosbag2_storage_mcap::internal::MessageDefinitionCache;
 using rosbag2_storage_mcap::internal::parse_dependencies;
 using ::testing::UnorderedElementsAre;
 
-TEST(test_message_definition_cache, can_find_idl_includes) {
-  const char sample[] = R"r(
+TEST(test_message_definition_cache, can_find_idl_includes)
+{
+  const char sample[] =
+    R"r(
 #include "rosbag2_storage_mcap_testdata/msg/BasicIdlA.idl"
 
 #include <rosbag2_storage_mcap_testdata/msg/BasicIdlB.idl>
@@ -44,7 +46,8 @@ module rosbag2_storage_mcap_testdata {
                                                  "rosbag2_storage_mcap_testdata/msg/BasicIdlB"));
 }
 
-TEST(test_message_definition_cache, can_find_msg_deps) {
+TEST(test_message_definition_cache, can_find_msg_deps)
+{
   MessageDefinitionCache cache;
   auto [format, content] = cache.get_full_text("rosbag2_storage_mcap_testdata/ComplexMsg");
   ASSERT_EQ(format, Format::MSG);
@@ -57,7 +60,8 @@ float32 c
 )r");
 }
 
-TEST(test_message_definition_cache, can_find_idl_deps) {
+TEST(test_message_definition_cache, can_find_idl_deps)
+{
   MessageDefinitionCache cache;
   auto [format, content] = cache.get_full_text("rosbag2_storage_mcap_testdata/msg/ComplexIdl");
   EXPECT_EQ(format, Format::IDL);
@@ -86,7 +90,8 @@ module rosbag2_storage_mcap_testdata {
 )r");
 }
 
-TEST(test_message_definition_cache, can_resolve_msg_with_idl_deps) {
+TEST(test_message_definition_cache, can_resolve_msg_with_idl_deps)
+{
   MessageDefinitionCache cache;
   auto [format, content] =
     cache.get_full_text("rosbag2_storage_mcap_testdata/msg/ComplexMsgDependsOnIdl");
