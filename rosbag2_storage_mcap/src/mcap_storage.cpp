@@ -211,6 +211,9 @@ public:
     const std::vector<std::shared_ptr<const rosbag2_storage::SerializedBagMessage>> & msg) override;
   void create_topic(const rosbag2_storage::TopicMetadata & topic) override;
   void remove_topic(const rosbag2_storage::TopicMetadata & topic) override;
+#ifdef ROSBAG2_STORAGE_MCAP_HAS_UPDATE_METADATA
+  void update_metadata(const rosbag2_storage::BagMetadata &) override;
+#endif
 
 private:
   void open_impl(const std::string & uri, const std::string & preset_profile,
@@ -708,6 +711,18 @@ void MCAPStorage::remove_topic(const rosbag2_storage::TopicMetadata & topic)
 {
   topics_.erase(topic.name);
 }
+
+#ifdef ROSBAG2_STORAGE_MCAP_HAS_UPDATE_METADATA
+void MCAPStorage::update_metadata(const rosbag2_storage::BagMetadata & bag_metadata)
+{
+  if (bag_metadata.compression_mode == "message") {
+    throw std::runtime_error(
+      "MCAP storage plugin does not support message compression, "
+      "consider using chunk compression by setting `compression: 'Zstd'` in storage config");
+  }
+}
+#endif
+
 }  // namespace rosbag2_storage_plugins
 
 #include "pluginlib/class_list_macros.hpp"  // NOLINT
