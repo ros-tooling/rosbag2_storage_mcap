@@ -1,9 +1,15 @@
 ---
 Language: Cpp
+Standard: c++17
 BasedOnStyle: Google
 
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortLambdasOnASingleLine: Empty
 AccessModifierOffset: -2
-AlignAfterOpenBracket: AlwaysBreak
+TabWidth: 2
+ContinuationIndentWidth: 2
+UseTab: Never
+BreakConstructorInitializers: BeforeComma
 BraceWrapping:
   AfterClass: true
   AfterFunction: true
@@ -12,10 +18,20 @@ BraceWrapping:
   AfterEnum: true
 BreakBeforeBraces: Custom
 ColumnLimit: 100
-ConstructorInitializerIndentWidth: 0
-ContinuationIndentWidth: 2
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
 DerivePointerAlignment: false
+FixNamespaceComments: true
 PointerAlignment: Middle
 ReflowComments: false
+SortIncludes: true
 IndentPPDirectives: BeforeHash
-...
+
+IncludeCategories:
+  - Regex: '^"'
+    Priority: 1
+  - Regex: "^<mcap"
+    Priority: 2
+  - Regex: "^<.*/"
+    Priority: 3
+  - Regex: "^<.*"
+    Priority: 4

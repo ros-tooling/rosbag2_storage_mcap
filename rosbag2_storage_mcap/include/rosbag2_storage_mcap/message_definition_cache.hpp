@@ -15,13 +15,13 @@
 #ifndef ROSBAG2_STORAGE_MCAP__MESSAGE_DEFINITION_CACHE_HPP_
 #define ROSBAG2_STORAGE_MCAP__MESSAGE_DEFINITION_CACHE_HPP_
 
+#include "visibility_control.hpp"
+
 #include <set>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
-
-#include "visibility_control.hpp"
 
 namespace rosbag2_storage_mcap::internal
 {
@@ -56,9 +56,15 @@ private:
   std::string name_;
 
 public:
-  explicit DefinitionNotFoundError(std::string name) : name_(std::move(name)) {}
+  explicit DefinitionNotFoundError(std::string name)
+      : name_(std::move(name))
+  {
+  }
 
-  const char * what() const noexcept override { return name_.c_str(); }
+  const char * what() const noexcept override
+  {
+    return name_.c_str();
+  }
 };
 
 class MessageDefinitionCache final
@@ -96,8 +102,8 @@ private:
 };
 
 ROSBAG2_STORAGE_MCAP_PUBLIC
-std::set<std::string> parse_dependencies(
-  Format format, const std::string & text, const std::string & package_context);
+std::set<std::string> parse_dependencies(Format format, const std::string & text,
+                                         const std::string & package_context);
 
 }  // namespace rosbag2_storage_mcap::internal
 

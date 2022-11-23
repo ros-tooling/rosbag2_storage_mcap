@@ -14,11 +14,11 @@
 
 #include "rosbag2_storage_mcap/message_definition_cache.hpp"
 
-#include <rcutils/logging_macros.h>
-
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <ament_index_cpp/get_resource.hpp>
 #include <ament_index_cpp/get_resources.hpp>
+#include <rcutils/logging_macros.h>
+
 #include <fstream>
 #include <functional>
 #include <optional>
@@ -44,8 +44,8 @@ static const std::unordered_set<std::string> PRIMITIVE_TYPES{
   "bool",  "byte",   "char",  "float32", "float64", "int8",   "uint8",
   "int16", "uint16", "int32", "uint32",  "int64",   "uint64", "string"};
 
-static std::set<std::string> parse_msg_dependencies(
-  const std::string & text, const std::string & package_context)
+static std::set<std::string> parse_msg_dependencies(const std::string & text,
+                                                    const std::string & package_context)
 {
   std::set<std::string> dependencies;
 
@@ -75,8 +75,8 @@ static std::set<std::string> parse_idl_dependencies(const std::string & text)
   return dependencies;
 }
 
-std::set<std::string> parse_dependencies(
-  Format format, const std::string & text, const std::string & package_context)
+std::set<std::string> parse_dependencies(Format format, const std::string & text,
+                                         const std::string & package_context)
 {
   switch (format) {
     case Format::MSG:
@@ -120,9 +120,9 @@ static std::string delimiter(const DefinitionIdentifier & definition_identifier)
 }
 
 MessageSpec::MessageSpec(Format format, std::string text, const std::string & package_context)
-: dependencies(parse_dependencies(format, text, package_context)),
-  text(std::move(text)),
-  format(format)
+    : dependencies(parse_dependencies(format, text, package_context))
+    , text(std::move(text))
+    , format(format)
 {
 }
 
@@ -134,15 +134,15 @@ const MessageSpec & MessageDefinitionCache::load_message_spec(
     return it->second;
   }
   std::smatch match;
-  if (!std::regex_match(
-        definition_identifier.package_resource_name, match, PACKAGE_TYPENAME_REGEX)) {
-    throw std::invalid_argument(
-      "Invalid package resource name: " + definition_identifier.package_resource_name);
+  if (!std::regex_match(definition_identifier.package_resource_name, match,
+                        PACKAGE_TYPENAME_REGEX)) {
+    throw std::invalid_argument("Invalid package resource name: " +
+                                definition_identifier.package_resource_name);
   }
   std::string package = match[1];
   std::string share_dir = ament_index_cpp::get_package_share_directory(package);
-  std::ifstream file{
-    share_dir + "/msg/" + match[2].str() + extension_for_format(definition_identifier.format)};
+  std::ifstream file{share_dir + "/msg/" + match[2].str() +
+                     extension_for_format(definition_identifier.format)};
   if (!file.good()) {
     throw DefinitionNotFoundError(definition_identifier.package_resource_name);
   }
@@ -150,9 +150,8 @@ const MessageSpec & MessageDefinitionCache::load_message_spec(
   std::string contents{std::istreambuf_iterator(file), {}};
   const MessageSpec & spec =
     msg_specs_by_definition_identifier_
-      .emplace(
-        definition_identifier,
-        MessageSpec(definition_identifier.format, std::move(contents), package))
+      .emplace(definition_identifier,
+               MessageSpec(definition_identifier.format, std::move(contents), package))
       .first->second;
 
   // "References and pointers to data stored in the container are only invalidated by erasing that
@@ -187,8 +186,8 @@ std::pair<Format, std::string> MessageDefinitionCache::get_full_text(
     result = append_recursive(DefinitionIdentifier{format, root_package_resource_name});
   } catch (const DefinitionNotFoundError & err) {
     // log that we've fallen back
-    RCUTILS_LOG_WARN_NAMED(
-      "rosbag2_storage_mcap", "no .msg definition for %s, falling back to IDL", err.what());
+    RCUTILS_LOG_WARN_NAMED("rosbag2_storage_mcap", "no .msg definition for %s, falling back to IDL",
+                           err.what());
     format = Format::IDL;
     DefinitionIdentifier root_definition_identifier{format, root_package_resource_name};
     result = delimiter(root_definition_identifier) + append_recursive(root_definition_identifier);

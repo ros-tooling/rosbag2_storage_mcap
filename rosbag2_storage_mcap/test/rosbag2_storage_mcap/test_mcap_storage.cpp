@@ -26,13 +26,13 @@ using StorageOptions = rosbag2_storage::StorageOptions;
   #include "rosbag2_cpp/storage_options.hpp"
 using StorageOptions = rosbag2_cpp::StorageOptions;
 #endif
+#include "rosbag2_test_common/temporary_directory_fixture.hpp"
+#include "std_msgs/msg/string.hpp"
+
 #include <gmock/gmock.h>
 
 #include <memory>
 #include <string>
-
-#include "rosbag2_test_common/temporary_directory_fixture.hpp"
-#include "std_msgs/msg/string.hpp"
 
 using namespace ::testing;  // NOLINT
 using TemporaryDirectoryFixture = rosbag2_test_common::TemporaryDirectoryFixture;
