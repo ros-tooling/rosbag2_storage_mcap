@@ -2,8 +2,8 @@
 Changelog for package mcap_vendor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.0 (2022-11-28)
+------------------
 * Fix Windows build (`#73 <https://github.com/ros-tooling/rosbag2_storage_mcap/issues/73>`_)
   Update mcap version to newest windows-compatible release.
   Add visibility macros for tests.
