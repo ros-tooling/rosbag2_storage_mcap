@@ -296,10 +296,10 @@ static void SetOptionsForPreset(const std::string & preset_profile, McapWriterOp
     options.compression = mcap::Compression::Zstd;
     options.compressionLevel = mcap::CompressionLevel::Slowest;
     options.chunkSize = 4 * 1024 * 1024;
-  } else {
+  } else if (preset_profile != "none") {
     throw std::runtime_error(
       "unknown MCAP storage preset profile "
-      "(valid options are 'fastwrite', 'zstd_fast', 'zstd_small'): " +
+      "(valid options are 'none', 'fastwrite', 'zstd_fast', 'zstd_small'): " +
       preset_profile);
   }
 }
