@@ -2,6 +2,14 @@
 Changelog for package mcap_vendor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix Windows build (`#73 <https://github.com/ros-tooling/rosbag2_storage_mcap/issues/73>`_)
+  Update mcap version to newest windows-compatible release.
+  Add visibility macros for tests.
+  Add clang-format preprocessor indentation for visibility_control to be readable.
+* Contributors: Emerson Knapp
+
 0.5.0 (2022-11-02)
 ------------------
 * mcap_vendor: update to v0.6.0 (`#69 <https://github.com/ros-tooling/rosbag2_storage_mcap/issues/69>`_)

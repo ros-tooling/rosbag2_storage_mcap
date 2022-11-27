@@ -2,6 +2,22 @@
 Changelog for package rosbag2_storage_mcap
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* mcap_storage: 'none' is a valid storage preset profile (`#86 <https://github.com/ros-tooling/rosbag2_storage_mcap/issues/86>`_)
+* mcap_storage: handle update_metadata call (`#83 <https://github.com/ros-tooling/rosbag2_storage_mcap/issues/83>`_)
+* Update clang-format rules to fit ROS 2 style guide (`#80 <https://github.com/ros-tooling/rosbag2_storage_mcap/issues/80>`_)
+* Revert "read_order: throw exception from set_read_order for unsupported orders"
+  This reverts commit aef9b9a65293f9e5d80a858ef84e485a8655a0c0.
+* read_order: throw exception from set_read_order for unsupported orders
+* Fix compile flags to work on rosbag_storage:0.17.x (`#78 <https://github.com/ros-tooling/rosbag2_storage_mcap/issues/78>`_)
+  This fixes the compile flags for rolling, which has two versions -- one that does not support read order (0.17.x) and one that does support read order (0.18.x).
+* Fix Windows build (`#73 <https://github.com/ros-tooling/rosbag2_storage_mcap/issues/73>`_)
+  Update mcap version to newest windows-compatible release.
+  Add visibility macros for tests.
+  Add clang-format preprocessor indentation for visibility_control to be readable.
+* Contributors: Andrew Symington, Emerson Knapp, James Smith, james-rms
+
 0.5.0 (2022-11-02)
 ------------------
 * set defaults for SQLite plugin parity (`#68 <https://github.com/ros-tooling/rosbag2_storage_mcap/issues/68>`_)
