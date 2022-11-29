@@ -1,4 +1,8 @@
-# rosbag2_storage_mcap
+# ⚠️ Moved to [ros2/rosbag2](https://github.com/ros2/rosbag2) ⚠️
+
+Development continues at https://github.com/ros2/rosbag2/tree/rolling/rosbag2_storage_mcap. Please do not open new issues on this repo - instead, report issues [here](https://github.com/ros2/rosbag2/issues).
+
+## rosbag2_storage_mcap
 
 This package provides a [storage plugin](https://github.com/ros2/rosbag2#storage-format-plugin-architecture) for rosbag2 which extends it with support for the [MCAP](https://mcap.dev) file format.
 
